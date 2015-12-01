@@ -1,0 +1,190 @@
+/* The functions in this file are written by myself, aiming to 
+ * solve the transport-equations */
+
+/* $Id: other_functions.c, v 0.1 2015/09/04 10:11:00 zlb Exp $ */
+#include<stdio.h>
+#include<math.h>
+#include<string.h>
+#include"other_functions.h"
+//#include <iostream>
+//#include "Eigen/Dense"
+//using namespace Eigen;
+//using namespace std;
+//using Eigen::MatrixXd;
+
+/* beta_function.c */
+double
+beta_function(int l, int m, int c){
+    double r;
+    r=c*sqrt((l-m)*(l-m-1)/(4*(2*l-1)*(2*l+1)));
+    return r;
+}//endof-beta_function
+
+
+/* alpha_function.c */
+double
+alpha_function(int l, int m, int c){
+    double r;
+    r=c*sqrt((l+m+2)*(l+m+1)/(4*(2*l+1)*(2*l+3)));
+    return r;
+}//endof-alpha_function
+
+
+/* gamma_function.c */
+double
+gamma_function(int l, int m, int c){
+    double r;
+    r=c*sqrt((l-m)*(l+m)/((2*l-1)*(2*l+1)));
+    return r;
+}//endof-gamma_function
+
+
+/* eta_function.c */
+double
+eta_function(int l, int m, int c){
+    double r;
+    r=c*sqrt((l+m+1)*(l-m+1)/((2*l+3)*(2*l+1)));
+    return r;
+}//endof-eta_function
+
+
+/* build_D_x_matrix.c */
+void
+build_D_x_matrix(int N, double *D_x)
+{
+    int n;
+    n=(N+1)*(N+1);
+    /* it is easy to compute that in P_N approximate the number 
+     * of how many Y_l^m is (N+1)*(N+1), so the D_x is a n*n matrix */
+    int i;
+    for(i=0;i<n*n;i++){
+        *(D_x+i)=0.0;
+    }
+    /* Just only to give an initial value to matrix D_x */
+
+    int l,m;
+    int row,col,ptr;//ptr is to transform row and col to 1 dim in row storage
+    for(l=0;l<=N;l++){
+        for(m=-l;m<=l;m++){
+            if(l-1>=0){
+                if(m-1>=-(l-1)){
+                    col=l;
+                    row=(l-1)*(l-1)+(l-1)+(m-1);
+                    ptr=row*n+col;
+                    *(D_x+ptr)=beta_function(l,-m,-1);
+                }//endof-if(m-1)
+                if(m+1<=l-1){
+                    col=l;
+                    row=(l-1)*(l-1)+(l-1)+(m+1);
+                    ptr=row*n+col;
+                    *(D_x+ptr)=beta_function(l,m,1);
+                }//endof-if(m+1)
+            }//endof-if(l-1)
+
+            if(l+1<=N){
+                if(m-1>=-(l+1)){
+                    col=l;
+                    row=(l+1)*(l+1)+(l+1)+(m-1);
+                    ptr=row*n+col;
+                    *(D_x+ptr)=alpha_function(l,-m,1);
+                }//endof-if(m-1)
+                if(m+1<=l+1){
+                    col=l;
+                    row=(l+1)*(l+1)+(l+1)+(m+1);
+                    ptr=row*n+col;
+                    *(D_x+ptr)=alpha_function(l,m,-1);
+                }//endof-if(m+1)
+            }//endof-if(l+1)
+        }//endof-for(m=-l;...)
+    }//endof-for(l=0;...)
+}//endof-build_D_matrix
+
+
+/* build_D_y_matrix.c */
+void
+build_D_y_matrix(int N, double *D_y)
+{
+    int n;
+    n=(N+1)*(N+1);
+    /* it is easy to compute that in P_N approximate the number 
+     * of how many Y_l^m is (N+1)*(N+1), so the D_x is a n*n matrix */
+    int i;
+    for(i=0;i<n*n;i++){
+        *(D_y+i)=0.0;
+    }
+    /* Just only to give an initial value to matrix D_x */
+
+    int l,m;
+    int row,col,ptr;//ptr is to transform row and col to 1 dim in row storage
+    for(l=0;l<=N;l++){
+        for(m=-l;m<=l;m++){
+            if(l-1>=0){
+                if(m-1>=-(l-1)){
+                    col=l;
+                    row=(l-1)*(l-1)+(l-1)+(m-1);
+                    ptr=row*n+col;
+                    *(D_y+ptr)=beta_function(l,-m,1);
+                }//endof-if(m-1)
+                if(m+1<=l-1){
+                    col=l;
+                    row=(l-1)*(l-1)+(l-1)+(m+1);
+                    ptr=row*n+col;
+                    *(D_y+ptr)=beta_function(l,m,-1);
+                }//endof-if(m+1)
+            }//endof-if(l-1)
+
+            if(l+1<=N){
+                if(m-1>=-(l+1)){
+                    col=l;
+                    row=(l+1)*(l+1)+(l+1)+(m-1);
+                    ptr=row*n+col;
+                    *(D_y+ptr)=alpha_function(l,-m,-1);
+                }//endof-if(m-1)
+                if(m+1<=l+1){
+                    col=l;
+                    row=(l+1)*(l+1)+(l+1)+(m+1);
+                    ptr=row*n+col;
+                    *(D_y+ptr)=alpha_function(l,m,1);
+                }//endof-if(m+1)
+            }//endof-if(l+1)
+        }//endof-for(m=-l;...)
+    }//endof-for(l=0;...)
+}//endof-build_D_matrix
+
+
+/* build_D_z_matrix.c */
+void
+build_D_z_matrix(int N, double *D_z){
+    int n=(N+1)*(N+1);
+    int i;
+    for(i=0;i<n*N;i++){
+        *(D_z+i)=0.0;
+    }
+
+    int l,m;
+    int col,row,ptr;
+    for(l=0;l<=N;l++){
+        for(m=-l;m<=l;m++){
+            if(l-1>=0){
+                col=l;
+                row=(l-1)*(l-1)+(l-1)+m;
+                ptr=row*n+col;
+                *(D_z+ptr)=gamma_function(l,m,1);
+            }
+            if(l+1<=N){
+                col=l;
+                row=(l+1)*(l+1)+(l+1)+m;
+                ptr=row*n+col;
+                *(D_z+ptr)=eta_function(l,m,1);
+            }
+        }//endof-for(m=-l)
+    }//endof-for(l=0)
+}//endof-build_D_z_matrix
+
+
+
+
+
+
+
+
