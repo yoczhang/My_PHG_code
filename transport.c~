@@ -561,9 +561,9 @@ main(int argc, char *argv[])
         phgMatDisassemble(F_z0);
         phgMatDisassemble(F_0z);
 
-        phgMatDisassemble(F_00); 
-        /*------------------------------------------------------*/
+        phgMatDisassemble(F_00);
         /*------------ Disassemble the MAT *F_xx ... -----------*/
+        /*------------------------------------------------------*/
 
         //printf("next is return 0\n");
         //return 0;
@@ -578,18 +578,8 @@ main(int argc, char *argv[])
                 F_zx, F_zy, F_zz, F_z0, F_0z, 
                 F_00);
 
-        /*------------------ Build the RHS ---------------------*/
-        /*------------------------------------------------------*/
-        /*
-         * According the equation's RHS expression, we can use the
-         * matrixes which we have built above.
-         */
         printf("Build the RHS \n");
-        
-
-
-        /*------------------------------------------------------*/
-        /*------------------ Build the RHS ---------------------*/
+        build_rhs();
 
         printf("next is return 0\n");
         return 0;

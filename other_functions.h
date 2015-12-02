@@ -110,7 +110,7 @@ test_2_dim_pointer(int n, double **A);
 /*--------------------------------------------------------------------------------*/
 /**********************************************************************************/
 void
-ArrangMatrixInRows(int row, int col, double **A, double *C);
+arrangeMatrixInRows(int row, int col, double **A, double *C);
 /**********************************************************************************/
 /*--------------------------------------------------------------------------------*/
 
@@ -142,7 +142,7 @@ phgQuadBasParGradi_BasParGradj(ELEMENT *e, int ParGradi, DOF *u, int n,
  * To assemble the matrixes: F_xx, F_xy ...
  */
 void
-Assemble_Fxx_matrixes(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x, 
+assemble_Fxx_matrixes(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x, 
         MAT *F_yx, MAT *F_yy, MAT *F_yz, MAT *F_y0, MAT *F_0y,
         MAT *F_zx, MAT *F_zy, MAT *F_zz, MAT *F_z0, MAT *F_0z,
         MAT *F_00);
