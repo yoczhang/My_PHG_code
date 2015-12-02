@@ -543,11 +543,14 @@ main(int argc, char *argv[])
         solver->mat=matDF;
         solver->rhs->mat=solver->mat;
 
-        phgPrintf("Assemble the matrixes: F_xx, F_xy ... ");
+        phgPrintf("Assemble the matrixes: F_xx, F_xy ... \n");
         Assemble_Fxx_matrixes(F_xx, F_xy, F_xz, F_x0, F_0x, 
                 F_yx, F_yy, F_yz, F_y0, F_0y, 
                 F_zx, F_zy, F_zz, F_z0, F_0z, 
                 F_00);
+
+        printf("next is return 0\n");
+        return 0;
 
         phgMatDestroy(&F_xx);
         phgMatDestroy(&F_xy);

@@ -437,7 +437,7 @@ Assemble_Fxx_matrixes(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
 
         for (i = 0; i < N; ++i) {
             I[i] = phgMapE2L(mapF, 0, e, i);
-            for(j = 0; j <= N; ++j){
+            for(j = 0; j <= i; ++j){
                 matF_xx[i][j]=matF_xx[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 1, u_h, i, -1);
                 matF_xy[i][j]=matF_xy[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 2, u_h, i, -1);
                 matF_xz[i][j]=matF_xz[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 3, u_h, i, -1);
@@ -457,15 +457,31 @@ Assemble_Fxx_matrixes(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
                 matF_0z[i][j]=matF_0z[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 3, u_h, i, -1);
 
                 matF_00[i][j]=matF_00[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 0, u_h, i, -1);
-            }//endof_for(j = 0; j <= N; ++j)
+            }//endof_for(j = 0; j <= i; ++j)
         }//endof_for(i = 0; i <= N; ++i)
 
+        for(i = 0;i < N;++i){/* add entries to MAT *F_xx, *F_xy ... */
+            phgMatAddEntries(F_xx, 1, I+i, N, I, &matF_xx[i][0]);
+            phgMatAddEntries(F_xy, 1, I+i, N, I, &matF_xy[i][0]);
+            phgMatAddEntries(F_xz, 1, I+i, N, I, &matF_xz[i][0]);
+            phgMatAddEntries(F_x0, 1, I+i, N, I, &matF_x0[i][0]);
+            phgMatAddEntries(F_0x, 1, I+i, N, I, &matF_0x[i][0]);
 
+            phgMatAddEntries(F_yx, 1, I+i, N, I, &matF_yx[i][0]);
+            phgMatAddEntries(F_yy, 1, I+i, N, I, &matF_yy[i][0]);
+            phgMatAddEntries(F_yz, 1, I+i, N, I, &matF_yz[i][0]);
+            phgMatAddEntries(F_y0, 1, I+i, N, I, &matF_y0[i][0]);
+            phgMatAddEntries(F_0y, 1, I+i, N, I, &matF_0y[i][0]);
 
+            phgMatAddEntries(F_zx, 1, I+i, N, I, &matF_zx[i][0]);
+            phgMatAddEntries(F_zy, 1, I+i, N, I, &matF_zy[i][0]);
+            phgMatAddEntries(F_zz, 1, I+i, N, I, &matF_zz[i][0]);
+            phgMatAddEntries(F_z0, 1, I+i, N, I, &matF_z0[i][0]);
+            phgMatAddEntries(F_0z, 1, I+i, N, I, &matF_0z[i][0]);
 
+            phgMatAddEntries(F_00, 1, I+i, N, I, &matF_00[i][0]);
+        }//endof_for(i = 0;i < N;++i){/* add entries to MAT *F_xx, *F_xy ... */
     }//endof_ForAllElements(g, e)
-
-
 }//endof_Assemble_Fxx_matrixes()
 /**********************************************************************************/
 /*--------------------------------------------------------------------------------*/
