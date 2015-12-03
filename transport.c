@@ -624,7 +624,7 @@ main(int argc, char *argv[])
         /* rhs= matDF_rhs*Q */
         /*------------------------------------------------------*/
         /*------------------ Build the RHS ---------------------*/
-        
+       /* 
         for(im=0;im<lengthQ;++im){
             printf("rhs=%f   \n",*(solver->rhs->data+im));
         }
@@ -633,6 +633,7 @@ main(int argc, char *argv[])
         for(im=0;im<lengthQ;++im){
             printf("rhs=%f   \n",*(Q->data+im));
         }
+        */
 
 
 
