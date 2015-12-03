@@ -102,18 +102,21 @@ main(int argc, char *argv[])
     MAT *F_yx, *pmatF_yx[nY*nY], *F_yy, *pmatF_yy[nY*nY], *F_yz, *pmatF_yz[nY*nY], *F_y0, *pmatF_y0[nY*nY], *F_0y, *pmatF_0y[nY*nY]; 
     MAT *F_zx, *pmatF_zx[nY*nY], *F_zy, *pmatF_zy[nY*nY], *F_zz, *pmatF_zz[nY*nY], *F_z0, *pmatF_z0[nY*nY], *F_0z, *pmatF_0z[nY*nY];
     MAT *F_00, *pmatF_00[nY*nY];
-    VEC *Q, *rhs;
+    VEC *Q=NULL, *rhs=NULL;
 
     //myDebug
     printf("test1\n");
 
     MAT *BlockMat_DxF[16]; //Because in the last there will be 16 blockmatrixes to add up together.
     MAT *matDF; // matDF=BlockMat_DxF[0]+BlockMat_DxF[1]+...+BlockMat_DxF[15];
+    MAT *BlockMat_DxF_rhs[4];
+    MAT *matDF_rhs;
 
     FLOAT coefD_xx[nY*nY], coefD_xy[nY*nY], coefD_xz[nY*nY], coefD_x0[nY*nY], coefD_0x[nY*nY];
     FLOAT coefD_yx[nY*nY], coefD_yy[nY*nY], coefD_yz[nY*nY], coefD_y0[nY*nY], coefD_0y[nY*nY];
     FLOAT coefD_zx[nY*nY], coefD_zy[nY*nY], coefD_zz[nY*nY], coefD_z0[nY*nY], coefD_0z[nY*nY];
     FLOAT coefD_00[nY*nY];
+    FLOAT coefD_x0_rhs[nY*nY], coefD_y0_rhs[nY*nY], coefD_z0_rhs[nY*nY], coefD_00_rhs[nY*nY];
 
     MAP *rmap, *cmap, *rhsmap;
 
@@ -360,7 +363,7 @@ main(int argc, char *argv[])
             *(*(temp+im)+jm)=*(*(D_0x+im)+jm)*sigma_t - *(*(Dd_0x+im)+jm)*sigma_s;
         }
     }
-    arrangeMatrixInRows(nY,nY,temp,coefD_x0);
+    arrangeMatrixInRows(nY,nY,temp,coefD_0x);
 
     for(im=0;im<nY;++im){
         for(jm=0;jm<nY;++jm){
@@ -383,6 +386,17 @@ main(int argc, char *argv[])
         }
     }
     arrangeMatrixInRows(nY,nY,temp,coefD_00);
+
+    arrangeMatrixInRows(nY,nY,D_x0,coefD_x0_rhs);
+    arrangeMatrixInRows(nY,nY,D_y0,coefD_y0_rhs);
+    arrangeMatrixInRows(nY,nY,D_z0,coefD_z0_rhs);
+    for(im=0;im<nY;++im){
+        for(jm=0;jm<nY;++jm){
+            *(*(temp+im)+jm)=*(*(Ie+im)+jm)*sigma_t - *(*(Delta0+im)+jm)*sigma_s;
+        }
+    }
+    arrangeMatrixInRows(nY,nY,temp,coefD_00_rhs);
+
 
     //printf("next is return 0\n");
     //return 0;
@@ -461,24 +475,6 @@ main(int argc, char *argv[])
         //myDebug
         printf("test11\n");
 
-        /*--------------- test the length of VEC *Q -------------*/
-        /*-------------------------------------------------------*/
-        int lengthQ;
-        lengthQ=Q->map->nlocal*Q->nvec;
-        printf("length of Q = %d \n",lengthQ);
-
-        if(lengthQ != nY * DofGetDataCountGlobal(u_F)){
-            printf("the length of Q is not matching the total number of DOFs(nY * DofGetDataCountGlobal(u_F)), quit!");
-        }
-
-        assert(lengthQ == nY * DofGetDataCountGlobal(u_F));
-
-        for(im=0;im<lengthQ;++im){
-            *(Q->data+im)=1.0;
-        }//assignment to VEC *Q.
-        /*-------------------------------------------------------*/
-        /*--------------- test the length of VEC *Q -------------*/
-
 
 
         /*------------ assemble the block matrix ... ------------*/
@@ -524,6 +520,11 @@ main(int argc, char *argv[])
         BlockMat_DxF[14]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_0z, coefD_0z, NULL);       
 
         BlockMat_DxF[15]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_00, coefD_00, NULL);
+
+        BlockMat_DxF_rhs[0]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_x0, coefD_x0_rhs, NULL);
+        BlockMat_DxF_rhs[1]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_y0, coefD_y0_rhs, NULL);
+        BlockMat_DxF_rhs[2]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_z0, coefD_z0_rhs, NULL);
+        BlockMat_DxF_rhs[3]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_00, coefD_00_rhs, NULL);
         /*-------------------------------------------------------*/
         /*------------ assemble the block matrix ... ------------*/
 
@@ -536,7 +537,19 @@ main(int argc, char *argv[])
         }
         /*------------------------------------------------------*/
         /*--------- Add the block matrixes to MAT *matDF -------*/
-    
+
+
+
+        /*------- Add the block matrixes to MAT *matDF_rhs -----*/
+        /*------------------------------------------------------*/
+        matDF_rhs=phgMatAXPBY(1.0,BlockMat_DxF_rhs[0],0.0,&matDF_rhs);
+        for(im=1;im<4;++im){
+            matDF_rhs=phgMatAXPBY(1.0,BlockMat_DxF_rhs[im],1.0,&matDF_rhs);
+        }
+        /*------------------------------------------------------*/
+        /*------- Add the block matrixes to MAT *matDF_rhs -----*/
+
+ 
 
         /*------------ Disassemble the MAT *F_xx ... -----------*/
         /*------------------------------------------------------*/
@@ -578,6 +591,8 @@ main(int argc, char *argv[])
                 F_zx, F_zy, F_zz, F_z0, F_0z, 
                 F_00);
 
+
+
         /*------------------ Build the RHS ---------------------*/
         /*------------------------------------------------------*/
         /*
@@ -585,11 +600,51 @@ main(int argc, char *argv[])
          * matrixes which we have built above.
          */
         printf("Build the RHS \n");
-        
 
+        /*--------------- test the length of VEC *Q -------------*/
+        /*-------------------------------------------------------*/
+        int lengthQ;
+        lengthQ=Q->map->nlocal*Q->nvec;
+        printf("length of Q = %d \n",lengthQ);
 
+        if(lengthQ != nY * DofGetDataCountGlobal(u_F)){
+            printf("the length of Q is not matching the total number of DOFs(nY * DofGetDataCountGlobal(u_F)), quit!");
+        }
+
+        assert(lengthQ == nY * DofGetDataCountGlobal(u_F));
+
+        for(im=0;im<lengthQ;++im){
+            *(Q->data+im)=1.0;
+        }//assignment to VEC *Q.
+        /*-------------------------------------------------------*/
+        /*--------------- test the length of VEC *Q -------------*/
+
+        rhs=solver->rhs;
+        rhs=phgMatVec(0, 1.0, matDF_rhs, Q, 0.0, &rhs);
+        /* rhs= matDF_rhs*Q */
         /*------------------------------------------------------*/
         /*------------------ Build the RHS ---------------------*/
+        
+        for(im=0;im<lengthQ;++im){
+            printf("rhs=%f   \n",*(solver->rhs->data+im));
+        }
+
+        printf("\n");
+        for(im=0;im<lengthQ;++im){
+            printf("rhs=%f   \n",*(Q->data+im));
+        }
+
+
+
+        elapsed_time(g,TRUE,0.);
+
+        phgPrintf("Solve linear system: ");
+        phgSolverSolve(solver,TRUE,u_solver,NULL);
+        phgPrintf("nits=%d, resid=%0.4lg ",solver->nits,
+                (double)solver->residual);
+        elapsed_time(g,TRUE,0.);
+
+
 
         printf("next is return 0\n");
         return 0;
