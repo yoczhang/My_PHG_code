@@ -43,8 +43,10 @@ typedef SIMPLEX ELEMENT;
      * it is easy to compute that in P_N(0,1,...N) approximate the number 
      * of how many Y_l^m is (N+1)*(N+1). 
      */
-#define sigma_t 1.0
-#define sigma_s 0.6
+
+FLOAT sigma_t = 1.0;
+FLOAT sigma_s = 0.5;
+FLOAT q_0 = 1.0;
 
 static FLOAT a = 1.0;
 
@@ -160,17 +162,10 @@ main(int argc, char *argv[])
     //myDebug
     printf("test5\n");
 
-    rhs = phgDofNew(g, DOF_CONSTANT, 1, "rhs", DofNoAction);
-    phgDofSetDataByValuesV(rhs, (FLOAT)1.0);
-
     error = phgDofNew(g, DOF_P0, 1, "error", DofNoAction);
 
     //myDebug
     printf("test6\n");
-
-    //rmap = phgMapCreate(u_F,NULL);
-    //cmap = phgMapCreate(u_F,NULL);
-    //rhsmap = phgMapCreate(u_solver,NULL);
 
     //myDebug
     printf("test7\n"); 
@@ -414,7 +409,7 @@ main(int argc, char *argv[])
 	    }//endof_if()
         
 	    phgPrintf("Set up linear solver: ");
-	    solver = phgSolverCreate(SOLVER_DEFAULT, u_solver, NULL);
+	    solver = phgSolverCreate(SOLVER_GMRES, u_solver, NULL);
 	    solver->mat->handle_bdry_eqns = FALSE;
         
         if(!solver->mat->handle_bdry_eqns)
@@ -599,12 +594,13 @@ main(int argc, char *argv[])
          * According the equation's RHS expression, we can use the
          * matrixes which we have built above.
          */
-        printf("Build the RHS \n");
+        //printf("Build the RHS \n");
 
         /*--------------- test the length of VEC *Q -------------*/
         /*-------------------------------------------------------*/
         int lengthQ;
         lengthQ=Q->map->nlocal*Q->nvec;
+        //lengthQ=Q->map->nlocal;
         printf("length of Q = %d \n",lengthQ);
 
         if(lengthQ != nY * DofGetDataCountGlobal(u_F)){
@@ -613,6 +609,9 @@ main(int argc, char *argv[])
 
         assert(lengthQ == nY * DofGetDataCountGlobal(u_F));
 
+        printf("build the RHS \n");
+        //build_rhs(D_x, D_y, D_z, u_F, rhs, nY);
+
         for(im=0;im<lengthQ;++im){
             *(Q->data+im)=1.0;
         }//assignment to VEC *Q.
@@ -620,7 +619,14 @@ main(int argc, char *argv[])
         /*--------------- test the length of VEC *Q -------------*/
 
         rhs=solver->rhs;
-        rhs=phgMatVec(0, 1.0, matDF_rhs, Q, 0.0, &rhs);
+
+        int lengthrhs;
+        lengthrhs=rhs->map->nlocal*rhs->nvec;
+        //lengthQ=Q->map->nlocal;
+        printf("length of rhs = %d \n",lengthrhs);
+
+        build_rhs(D_x, D_y, D_z, u_F, rhs, nY);
+        //rhs=phgMatVec(0, 1.0, matDF_rhs, Q, 0.0, &rhs);
         /* rhs= matDF_rhs*Q */
         /*------------------------------------------------------*/
         /*------------------ Build the RHS ---------------------*/

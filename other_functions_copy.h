@@ -3,6 +3,11 @@
 
 /* $Id: other_functions.h, v 0.1 2015/09/04 10:11:00 zlb Exp $ */
 
+/*
+ * 这个头文件是采用原来的球谐函数时的一个备份，在现在的 other_funtins.h
+ * 中采用了新的球谐函数，来组装D_x, D_y, D_z的
+ *
+ */
 #ifndef OTHER_FUNCTIONS_H
 #define OTHER_FUNCTIONS_H
 #endif
@@ -16,34 +21,22 @@
  * this function is to compute the value of \beta_{lm}.
  * the int l,int m are the subscript of \beta_{lm}, 
  * int c==1 <==> 1*(\beta_{lm}); c==-1 <==> (-1)*(\beta_{lm}) */
-//FLOAT beta_function(INT l, INT m, INT c);
+FLOAT beta_function(INT l, INT m, INT c);
 
 
 /* alpha_function.h
  * this function is to compute the value of \alpha_{lm} */
-//FLOAT alpha_function(INT l, INT m, INT c);
+FLOAT alpha_function(INT l, INT m, INT c);
 
 
 /* gamma_function.h
  * this function is to compute the value of \gamma_{lm} */
-//FLOAT gamma_function(INT l, INT m, INT c);
+FLOAT gamma_function(INT l, INT m, INT c);
 
 
 /* eta_function.h
  * this function is to compute the value of \eta_{lm} */
-//FLOAT eta_function(INT l, INT m, INT c);
-
-
-/* alpha_function.c 
- * this function is to compute the value of \alpha_{lm}*/
-FLOAT
-alpha_function(INT l, INT m, FLOAT c);
-
-
-/* lambda_function.c 
- * this function is to compute the value of \lambda_{lm}*/
-FLOAT
-lambda_function(INT l, INT m, FLOAT c);
+FLOAT eta_function(INT l, INT m, INT c);
 /**********************************************************************************/
 /*--------------------------------------------------------------------------------*/
 
@@ -151,25 +144,6 @@ phgQuadBasParGradi_BasParGradj(ELEMENT *e, int ParGradi, DOF *u, int n,
 /*--------------------------------------------------------------------------------*/
 /**********************************************************************************/
 /*
- * The following funcion is to compute the integration of the...
- *
- * 下面的函数是在单元e上计算第n个基函数的偏导数乘积的积分，
- * 其中ParGradi取0时表示不求导，1表示对x的偏导数，
- * 2表示对y的偏导数，3表示对z的偏导数。
- *
- * 此函数是在 quad.c 中 phgQuadGradBasAGradBas 函数的基础上改的，
- * 并且只用到了A=NULL 的情况，所以A！=NULL 的都删掉了。
- */
-FLOAT
-phgQuadBasParGradi(ELEMENT *e, int ParGradi, DOF *u, int n, int order);
-/**********************************************************************************/
-/*--------------------------------------------------------------------------------*/
-
-
-
-/*--------------------------------------------------------------------------------*/
-/**********************************************************************************/
-/*
  * To assemble the matrixes: F_xx, F_xy ...
  */
 void
@@ -177,17 +151,5 @@ assemble_Fxx_matrixes(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
         MAT *F_yx, MAT *F_yy, MAT *F_yz, MAT *F_y0, MAT *F_0y,
         MAT *F_zx, MAT *F_zy, MAT *F_zz, MAT *F_z0, MAT *F_0z,
         MAT *F_00);
-/**********************************************************************************/
-/*--------------------------------------------------------------------------------*/
-
-
-
-/*--------------------------------------------------------------------------------*/
-/**********************************************************************************/
-/* 
- * 
- */ 
-void
-build_rhs(FLOAT **D_x, FLOAT **D_y, FLOAT **D_z, DOF *u_F, VEC *rhs, INT nY);
 /**********************************************************************************/
 /*--------------------------------------------------------------------------------*/

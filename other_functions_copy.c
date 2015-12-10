@@ -2,6 +2,13 @@
  * solve the transport-equations */
 
 /* $Id: other_functions.c, v 0.1 2015/09/04 10:11:00 zlb Exp $ */
+
+/*
+ * 这个头文件是采用原来的球谐函数时的一个备份，在现在的 other_funtins.c
+ * 中采用了新的球谐函数，来组装D_x, D_y, D_z的
+ *
+ */
+
 #include "phg.h"
 #include "phg/quad-gauss.h"
 #include "phg/quad-permu.h"
@@ -17,72 +24,39 @@
 /*--------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------------*/
 /* beta_function.c */
-/*
 FLOAT
 beta_function(INT l, INT m, INT c){
     FLOAT r;
     r=c*sqrt(((FLOAT)l-m)*(l-m-1)/(4*(2*l-1)*(2*l+1)));
     return r;
 }//endof-beta_function
-*/
 
 
 /* alpha_function.c */
-/*
 FLOAT
 alpha_function(INT l, INT m, INT c){
     FLOAT r;
     r=c*sqrt(((FLOAT)l+m+2)*(l+m+1)/(4*(2*l+1)*(2*l+3)));
     return r;
 }//endof-alpha_function
-*/
 
 
 /* gamma_function.c */
-/*
 FLOAT
 gamma_function(INT l, INT m, INT c){
     FLOAT r;
     r=c*sqrt(((FLOAT)l-m)*(l+m)/((2*l-1)*(2*l+1)));
     return r;
 }//endof-gamma_function
-*/
 
 
 /* eta_function.c */
-/*
 FLOAT
 eta_function(INT l, INT m, INT c){
     FLOAT r;
     r=c*sqrt(((FLOAT)l+m+1)*(l-m+1)/((2*l+3)*(2*l+1)));
     return r;
 }//endof-eta_function
-*/
-
-/* alpha_function.c */
-FLOAT
-alpha_function(INT l, INT m, FLOAT c){
-    FLOAT r;
-    FLOAT numerator;//分子
-    FLOAT denominator;//分母
-    numerator=(FLOAT)(l+m+1)*(l+m+2);
-    denominator=(FLOAT)4*(2*l+1)*(2*l+3);
-    r=c*(-1.0)*sqrt(numerator/denominator);
-    return r;
-}//endof-alpha_function
-
-
-/* lambda_function.c */
-FLOAT
-lambda_function(INT l, INT m, FLOAT c){
-    FLOAT r;
-    FLOAT numerator;//分子
-    FLOAT denominator;//分母
-    numerator=(FLOAT)(l+m+1)*(l-m+1);
-    denominator=(FLOAT)(2*l+1)*(2*l+3);
-    r=c*sqrt(numerator/denominator);
-    return r;
-}//endof-lambda_function
 /*--------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------------*/
 
@@ -111,66 +85,35 @@ build_D_x_matrix(INT nY, INT PN, FLOAT **D_x)
     INT row,col;//ptr;//ptr is to transform row and col to 1 dim in row storage
     for(l=0;l<=PN;l++){
         for(m=-l;m<=l;m++){
-            col=l*l+l+m;
-            if(m>=1){
-                if(l-1>=0){
+            if(l-1>=0){
+                if(m-1>=-(l-1)){
+                    col=l*l+l+m;
                     row=(l-1)*(l-1)+(l-1)+(m-1);
-                    *(*(D_x+row)+col)=alpha_function(l-1,m-1,1.0);
-                    if(m+1<=l-1){
-                        row=(l-1)*(l-1)+(l-1)+(m+1);
-                        *(*(D_x+row)+col)=alpha_function(l-1,-m+1,-1.0);
-                    }
-                }//endof-if(l-1>=0)
-
-                if(l+1<=PN){
-                    row=(l+1)*(l+1)+(l+1)+(m-1);
-                    *(*(D_x+row)+col)=alpha_function(l,-m,-1.0);
-                    row=(l+1)*(l+1)+(l+1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l,m,1.0);
-                }
-            }//endof-if(m>=1)
-
-            if(m==0){
-                if(l-1<=0 && m+1<=l-1){
+                    //ptr=row*n+col;
+                    *(*(D_x+row)+col)=beta_function(l,-m,-1);
+                }//endof-if(m-1)
+                if(m+1<=l-1){
+                    col=l*l+l+m;
                     row=(l-1)*(l-1)+(l-1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l-1,-m-1,-sqrt(2));
-                }
-                if(l+1<=PN){
-                    row=(l+1)*(l+1)+(l+1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l,m,sqrt(2));
-                }
-            }//endof-if(m==0)
+                    //ptr=row*n+col;
+                    *(*(D_x+row)+col)=beta_function(l,m,1);
+                }//endof-if(m+1)
+            }//endof-if(l-1)
 
-            if(m==-1){
-                if(l-1>=0 && m-1>=-(l-1)){
-                    row=(l-1)*(l-1)+(l-1)+(m-1);
-                    *(*(D_x+row)+col)=alpha_function(l-1,m-1,-1.0);
-                }
-                if(l+1<=PN){
+            if(l+1<=PN){
+                if(m-1>=-(l+1)){
+                    col=l*l+l+m;
                     row=(l+1)*(l+1)+(l+1)+(m-1);
-                    *(*(D_x+row)+col)=alpha_function(l,-m,1.0);
-                }
-            }//endof-if(m==-1)
-
-            if(m<=-2){
-                if(l-1>=0){
-                    row=(l-1)*(l-1)+(l-1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l-1,-m-1,1.0);
-                    if(m-1>=-(l-1)){
-                        row=(l-1)*(l-1)+(l-1)+(m-1);
-                        *(*(D_x+row)+col)=alpha_function(l-1,m-1,1.0);
-                    }
-                }
-
-                if(l+1<=PN){
+                    //ptr=row*n+col;
+                    *(*(D_x+row)+col)=alpha_function(l,-m,1);
+                }//endof-if(m-1)
+                if(m+1<=l+1){
+                    col=l*l+l+m;
                     row=(l+1)*(l+1)+(l+1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l,m,-1.0);
-                    
-                    row=(l+1)*(l+1)+(l+1)+(m-1);
-                    *(*(D_x+row)+col)=alpha_function(l,-m,1.0);
-                }
-            }//endof-if(m<=-2)
-            
+                    //ptr=row*n+col;
+                    *(*(D_x+row)+col)=alpha_function(l,m,-1);
+                }//endof-if(m+1)
+            }//endof-if(l+1)
         }//endof-for(m=-l;...)
     }//endof-for(l=0;...)
 }//endof-build_D_matrix
@@ -190,60 +133,42 @@ build_D_y_matrix(INT nY, INT PN, FLOAT **D_y)
         for(j=0;j<nY;j++)
             *(*(D_y+i)+j)=0.0;
     }
-    // Just only to give an initial value to matrix D_y 
+    // Just only to give an initial value to matrix D_x 
     //*/
     
     INT l,m;
     INT row,col;//ptr;//ptr is to transform row and col to 1 dim in row storage
     for(l=0;l<=PN;l++){
         for(m=-l;m<=l;m++){
-           col=l*l+l+m;
-           if(m>=1){
-               if(l-1>=0){
-                   row=(l-1)*(l-1)+(l-1)-(m-1);
-                   *(*(D_y+row)+col)=alpha_function(l-1,m-1,-1.0);
-                   if(m+1<=l-1){
-                       row=(l-1)*(l-1)+(l-1)-(m+1);
-                       *(*(D_y+row)+col)=alpha_function(l-1,-m-1,1.0);
-                   }
-               }
-               if(l+1<=PN){
-                   row=(l+1)*(l+1)+(l+1)-(m-1);
-                   *(*(D_y+row)+col)=alpha_function(l,-m,-1.0);
-                   row=(l+1)*(l+1)+(l+1)-(m+1);
-                   *(*(D_y+row)+col)=alpha_function(l,m,1.0);
-               }
-           }//endof-if(m>=1)
+            if(l-1>=0){
+                if(m-1>=-(l-1)){
+                    col=l*l+l+m;
+                    row=(l-1)*(l-1)+(l-1)+(m-1);
+                    //ptr=row*n+col;
+                    *(*(D_y+row)+col)=beta_function(l,-m,1);
+                }//endof-if(m-1)
+                if(m+1<=l-1){
+                    col=l*l+l+m;
+                    row=(l-1)*(l-1)+(l-1)+(m+1);
+                    //ptr=row*n+col;
+                    *(*(D_y+row)+col)=beta_function(l,m,-1);
+                }//endof-if(m+1)
+            }//endof-if(l-1)
 
-           if(m==1){
-               if(l-1>=0 && m+1<=l-1){
-                   row=(l-1)*(l-1)+(l-1)-(m-1);
-                   *(*(D_y+row)+col)=alpha_function(l-1,-m-1,-1.0);
-               }
-                if(l+1<=PN){
-                    row=(l+1)*(l+1)+(l+1)-(m+1);
-                    *(*(D_y+row)+col)=alpha_function(l,m,1.0);
-                }
-           }//endof-if(m==1)
-
-           //m==0时，系数都为0，所以不用处理
-
-           if(m<=-1){
-               if(l-1>=0){
-                   row=(l-1)*(l-1)+(l-1)-(m+1);
-                   *(*(D_y+row)+col)=alpha_function(l-1,-m-1,1.0);
-                   if(-(m-1)<=l-1){
-                       row=(l-1)*(l-1)+(l-1)-(m-1);
-                       *(*(D_y+row)+col)=alpha_function(l-1,m-1,1.0);
-                   }
-               }
-               if(l+1<=PN){
-                   row=(l+1)*(l+1)+(l+1)-(m+1);
-                   *(*(D_y+row)+col)=alpha_function(l,m,-1.0);
-                   row=(l+1)*(l+1)+(l+1)-(m-1);
-                   *(*(D_y+row)+col)=alpha_function(l,-m,-1.0);
-               }
-           }//endof-if(m<=-1)
+            if(l+1<=PN){
+                if(m-1>=-(l+1)){
+                    col=l*l+l+m;
+                    row=(l+1)*(l+1)+(l+1)+(m-1);
+                    //ptr=row*n+col;
+                    *(*(D_y+row)+col)=alpha_function(l,-m,-1);
+                }//endof-if(m-1)
+                if(m+1<=l+1){
+                    col=l*l+l+m;
+                    row=(l+1)*(l+1)+(l+1)+(m+1);
+                    //ptr=row*n+col;
+                    *(*(D_y+row)+col)=alpha_function(l,m,1);
+                }//endof-if(m+1)
+            }//endof-if(l+1)
         }//endof-for(m=-l;...)
     }//endof-for(l=0;...)
 }//endof-build_D_matrix
@@ -266,14 +191,20 @@ build_D_z_matrix(INT nY, INT PN, FLOAT **D_z){
     INT col,row;//ptr;
     for(l=0;l<=PN;l++){
         for(m=-l;m<=l;m++){
-            col=l*l+l+m;
             if(l-1>=0 && m!=-l && m!=l){
+                col=l*l+l+m;
                 row=(l-1)*(l-1)+(l-1)+m;
-                *(*(D_z+row)+col)=lambda_function(l-1,m,1.0);
+                //printf("left1: l=%d, m=%d, row=%d, col=%d \n",l,m,row,col);
+                //ptr=row*n+col;
+                *(*(D_z+row)+col)=gamma_function(l,m,1);
+                //printf("left2: l=%d, m=%d, row=%d, col=%d, D_Z[%d][%d]=%f \n",l,m,row,col,row,col,*(*(D_z+row)+col));
             }
             if(l+1<=PN){
+                col=l*l+l+m;
                 row=(l+1)*(l+1)+(l+1)+m;
-                *(*(D_z+row)+col)=lambda_function(l,m,1.0);
+                //printf("right1: l=%d, m=%d, row=%d, col=%d \n",l,m,row,col);
+                //ptr=row*n+col;
+                *(*(D_z+row)+col)=eta_function(l,m,1);
                 //printf("right2: l=%d,m=%d, row=%d, col=%d, D_Z[%d][%d]=%f \n",l,m,row,col,row,col,*(*(D_z+row)+col));
             }
         }//endof-for(m=-l)
@@ -411,8 +342,8 @@ arrangeMatrixInRows(int row, int col, double **A, double *C)
  * The following funcion is to compute the integration of the...
  *
  * 下面的函数是在单元e上计算第m，n个基函数的偏导数乘积的积分，
- * 其中ParGradi(ParGradj)取0时表示不求导，1表示对x求偏导数，
- * 2表示对y的偏导数，3表示对z的偏导数。
+ * 其中ParGradi(ParGradj)取0时表示不求导，0表示对x求偏导数，
+ * 1表示对y的偏导数，2表示对z的偏导数。
  *
  * 此函数是在 quad.c 中 phgQuadGradBasAGradBas 函数的基础上改的，
  * 并且只用到了A=NULL 的情况，所以A！=NULL 的都删掉了。
@@ -421,7 +352,7 @@ FLOAT
 phgQuadBasParGradi_BasParGradj(ELEMENT *e, int ParGradi, DOF *u, int n, 
         int ParGradj, DOF *v, int m, int order)
 {
-    int i, j, nvalues = DofTypeDim(u);//对于Lagrange元，nvalues=1.
+    int i, j, nvalues = DofTypeDim(u);
     int Pin1, Pin2, Pout1, Pout2;
     FLOAT d, d0;
     const FLOAT *g1, *g2, *gNull1, *gNull2, *gPGrad1, *gPGrad2, *w;
@@ -486,74 +417,6 @@ phgQuadBasParGradi_BasParGradj(ELEMENT *e, int ParGradi, DOF *u, int n,
 
 
 /*--------------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------------*/
-/*
- * The following funcion is to compute the integration of the...
- *
- * 下面的函数是在单元e上计算第n个基函数的偏导数的积分，
- * 其中ParGradi取0时表示不求导，1表示对x求偏导数，
- * 2表示对y的偏导数，3表示对z的偏导数。
- *
- * 此函数是在 quad.c 中 phgQuadGradBasAGradBas 函数的基础上改的，
- * 并且只用到了A=NULL 的情况，所以A！=NULL 的都删掉了。
- */
-FLOAT
-phgQuadBasParGradi(ELEMENT *e, int ParGradi, DOF *u, int n, int order)
-{
-    int i, j, nvalues = DofTypeDim(u);//对于Lagrange元，nvalues=1.
-    int Pin1, Pout1;
-    FLOAT d, d0;
-    const FLOAT *g1, *gNull1, *gPGrad1, *w;
-    QUAD *quad;
-
-    if(nvalues != 1){
-        printf("\n In function 'phgQuadBasParGradi(...)' DofTypeDim(u)!=1, quit! \n");
-    }
-
-    assert(nvalues == 1);
-
-    if (order < 0) {
-	    order = BasisOrder(u, e, n)-1;
-	    if (order < 0)
-	        order = 0;
-    }
-    quad = phgQuadGetQuad3D(order);
-
-    d = 0.;
-    gNull1 = phgQuadGetBasisValues(e, u, n, quad);
-    gPGrad1 = phgQuadGetBasisGradient(e, u, n, quad);
-    w = quad->weights;
-
-    /* 下面的代码中"Pin, Pout" 的赋值完全是为了后面的for循环的代码统一 */
-    if(ParGradi==0){
-        g1=gNull1;
-        Pin1=0;//这里因为不求导，所以g1就是基函数本身的高斯积分点的值
-        Pout1=1;
-    }
-    else{
-        g1=gPGrad1;
-        Pin1=ParGradi-1;
-        //这里就是根据gPGrad1的数据结构来的，具体的数据结构可以参看笔记
-        Pout1=Dim;
-    }
-    
-	for (i = 0; i < quad->npoints; i++) {
-	    d0 = 0.;
-	    for (j = 0; j < nvalues; j++) {
-		    d0 += *(g1+Pin1);
-		    g1 += Pout1;
-	    }
-	    d += d0 * (*(w++));
-	}
-	return d * phgGeomGetVolume(u->g, e); 
-}//endof-phgQuadBasParGradi(...)
-/*--------------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------------*/
-
-
-
-
-/*--------------------------------------------------------------------------------*/
 /**********************************************************************************/
 /*
  * To assemble the matrixes: F_xx, F_xy ...
@@ -578,6 +441,7 @@ assemble_Fxx_matrixes(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
     assert(u_h->dim == 1);
 
     ForAllElements(g, e) {
+
         for (i = 0; i < N; ++i) {
             I[i] = phgMapE2L(mapF, 0, e, i);
             for(j = 0; j <= i; ++j){
@@ -630,91 +494,3 @@ assemble_Fxx_matrixes(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
 /*--------------------------------------------------------------------------------*/
 
 
-
-/*--------------------------------------------------------------------------------*/
-/**********************************************************************************/
-/* 
- * 
- */ 
-void
-build_rhs(FLOAT **D_x, FLOAT **D_y, FLOAT **D_z, DOF *u_F, VEC *rhs, INT nY)
-{
-    extern FLOAT sigma_t;
-    extern FLOAT sigma_s;
-    extern FLOAT q_0;
-    GRID *g = u_F->g;
-    ELEMENT *e;
-    MAP *mapu_F=phgMapCreate(u_F,NULL);
-    FLOAT coefRHS_x[nY], coefRHS_y[nY], coefRHS_z[nY], coefRHS_0[nY];
-    int N = u_F->type->nbas;
-    int num = DofGetDataCountGlobal(u_F);
-    int i, j, k;
-
-    VEC *rhs_xf, *rhs_yf, *rhs_zf, *rhs_0f;
-    FLOAT vec_xf[N], vec_yf[N], vec_zf[N], vec_0f[N], vec_0f1[N];
-    INT I[N];
-
-    DOF *f_c=phgDofNew(g, DOF_CONSTANT, 1, "f_c", DofNoAction);//myDebug
-    phgDofSetDataByValuesV(f_c, (FLOAT)1.0);//myDebug
-
-    for(i=0;i<nY;++i){
-        coefRHS_x[i]=q_0*D_x[0][i];
-        coefRHS_y[i]=q_0*D_y[0][i];
-        coefRHS_z[i]=q_0*D_z[0][i];
-        coefRHS_0[i]=0;
-    }
-    coefRHS_0[0]=q_0*(sigma_t - sigma_s);
-
-    rhs_xf=phgMapCreateVec(mapu_F,1);
-    phgVecDisassemble(rhs_xf);
-    rhs_yf=phgMapCreateVec(mapu_F,1);
-    phgVecDisassemble(rhs_yf);
-    rhs_zf=phgMapCreateVec(mapu_F,1);
-    phgVecDisassemble(rhs_zf);
-    rhs_0f=phgMapCreateVec(mapu_F,1);
-    phgVecDisassemble(rhs_0f);
-
-
-    assert(u_F->dim == 1);
-    
-    //myDebug
-    int nvalues=DofDim(u_F);
-    printf("nvalues=%d \n",nvalues);
-
-    ForAllElements(g, e){ 
-        for(i=0;i<N;++i){
-            I[i] = phgMapE2L(mapu_F, 0, e, i);
-            vec_0f[i]=phgQuadBasParGradi(e, 0, u_F, i, -1);
-            phgQuadDofTimesBas(e,f_c,u_F,i,QUAD_DEFAULT,vec_0f1+i);
-            vec_xf[i]=phgQuadBasParGradi(e, 1, u_F, i, -1);
-            vec_yf[i]=phgQuadBasParGradi(e, 2, u_F, i, -1);
-            vec_zf[i]=phgQuadBasParGradi(e, 3, u_F, i, -1);
-        }//endof-for(i=0;i<N;++i)
-
-        printf("test in build_rhs: test1\n");
-        for(i=0;i<N;++i){
-            printf("f_c[%d]=%f ",i,*(phgQuadGetDofValues(e,f_c,QUAD_DEFAULT)+i));
-            printf("vec_0f[%d]=%f  ",i,*(vec_0f+i));
-            printf("vec_0f1[%d]=%f \n",i,*(vec_0f1+i));
-        }
-
-
-        phgVecAddEntries(rhs_0f, 0, N, I, vec_0f);
-        printf("test in build_rhs: test2\n");
-        phgVecAddEntries(rhs_xf, 0, N, I, vec_xf);
-        phgVecAddEntries(rhs_yf, 0, N, I, vec_yf);
-        printf("test in build_rhs: test3\n");
-        phgVecAddEntries(rhs_zf, 0, N, I, vec_zf); 
-    }//endof-ForAllElements(g,e)
-
-    k=0;
-    for(i=0; i<nY; ++i){
-        for(j=0; j<num; ++j){
-            *(rhs->data + k) = *(rhs_xf->data + j) * coefRHS_x[i] + *(rhs_yf->data + j) * coefRHS_y[i] +
-                *(rhs_zf->data + j) * coefRHS_z[i] + *(rhs_0f->data + j) * coefRHS_0[i];
-            ++k;
-        }
-    }
-}//endof-build_rhs
-/**********************************************************************************/
-/*--------------------------------------------------------------------------------*/
