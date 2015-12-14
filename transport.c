@@ -39,6 +39,7 @@ typedef SIMPLEX ELEMENT;
 
 #define PN 3  /*  P3 approximate */
 #define nY ((PN+1)*(PN+1))
+#define Space_basis DOF_P1;
     /* 
      * it is easy to compute that in P_N(0,1,...N) approximate the number 
      * of how many Y_l^m is (N+1)*(N+1). 
@@ -150,13 +151,13 @@ main(int argc, char *argv[])
     //myDebug
     printf("test3\n");
     
-    u_F = phgDofNew(g, DOF_DEFAULT, 1, "u_F", DofInterpolation);
+    u_F = phgDofNew(g, Space_basis, 1, "u_F", DofInterpolation);
     u_F->DB_mask = BDRY_MASK;
 
     //myDebug
     printf("test4\n");
 
-    u_solver = phgDofNew(g, DOF_DEFAULT, nY, "u_solver", DofInterpolation);
+    u_solver = phgDofNew(g, Space_basis, nY, "u_solver", DofInterpolation);
     // It's very important to comprehend the parameter "nY" in phgDofNew().
     
     //myDebug
@@ -630,11 +631,12 @@ main(int argc, char *argv[])
         /* rhs= matDF_rhs*Q */
         /*------------------------------------------------------*/
         /*------------------ Build the RHS ---------------------*/
-       /* 
+       ///* 
         for(im=0;im<lengthQ;++im){
-            printf("rhs=%f   \n",*(solver->rhs->data+im));
+            printf("%d.rhs=%f   \n",im,*(solver->rhs->data+im));
         }
 
+        /*
         printf("\n");
         for(im=0;im<lengthQ;++im){
             printf("rhs=%f   \n",*(Q->data+im));

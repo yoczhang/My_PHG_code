@@ -133,11 +133,11 @@ build_D_x_matrix(INT nY, INT PN, FLOAT **D_x)
             if(m==0){
                 if(l-1<=0 && m+1<=l-1){
                     row=(l-1)*(l-1)+(l-1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l-1,-m-1,-sqrt(2));
+                    *(*(D_x+row)+col)=alpha_function(l-1,-m-1,-sqrt(2.0));
                 }
                 if(l+1<=PN){
                     row=(l+1)*(l+1)+(l+1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l,m,sqrt(2));
+                    *(*(D_x+row)+col)=alpha_function(l,m,sqrt(2.0));
                 }
             }//endof-if(m==0)
 
@@ -518,6 +518,7 @@ phgQuadBasParGradi(ELEMENT *e, int ParGradi, DOF *u, int n, int order)
 	        order = 0;
     }
     quad = phgQuadGetQuad3D(order);
+    //printf("in phgQuadBasParGradi() 'order'=%d, num of GaussPoints:%d \n",order,quad->npoints);//myDebug
 
     d = 0.;
     gNull1 = phgQuadGetBasisValues(e, u, n, quad);
@@ -581,25 +582,25 @@ assemble_Fxx_matrixes(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
         for (i = 0; i < N; ++i) {
             I[i] = phgMapE2L(mapF, 0, e, i);
             for(j = 0; j <= i; ++j){
-                matF_xx[i][j]=matF_xx[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 1, u_h, i, -1);
-                matF_xy[i][j]=matF_xy[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 2, u_h, i, -1);
-                matF_xz[i][j]=matF_xz[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 3, u_h, i, -1);
-                matF_x0[i][j]=matF_x0[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 0, u_h, i, -1);
-                matF_0x[i][j]=matF_0x[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 1, u_h, i, -1);
+                matF_xx[i][j]=matF_xx[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 1, u_h, i, 4);
+                matF_xy[i][j]=matF_xy[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 2, u_h, i, 4);
+                matF_xz[i][j]=matF_xz[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 3, u_h, i, 4);
+                matF_x0[i][j]=matF_x0[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 0, u_h, i, 4);
+                matF_0x[i][j]=matF_0x[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 1, u_h, i, 4);
 
-                matF_yx[i][j]=matF_yx[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 1, u_h, i, -1);
-                matF_yy[i][j]=matF_yy[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 2, u_h, i, -1);
-                matF_yz[i][j]=matF_yz[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 3, u_h, i, -1);
-                matF_y0[i][j]=matF_y0[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 0, u_h, i, -1);
-                matF_0y[i][j]=matF_0y[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 2, u_h, i, -1);
+                matF_yx[i][j]=matF_yx[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 1, u_h, i, 4);
+                matF_yy[i][j]=matF_yy[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 2, u_h, i, 4);
+                matF_yz[i][j]=matF_yz[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 3, u_h, i, 4);
+                matF_y0[i][j]=matF_y0[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 0, u_h, i, 4);
+                matF_0y[i][j]=matF_0y[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 2, u_h, i, 4);
 
-                matF_zx[i][j]=matF_zx[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 1, u_h, i, -1);
-                matF_zy[i][j]=matF_zy[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 2, u_h, i, -1);
-                matF_zz[i][j]=matF_zz[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 3, u_h, i, -1);
-                matF_z0[i][j]=matF_z0[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 0, u_h, i, -1);
-                matF_0z[i][j]=matF_0z[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 3, u_h, i, -1);
+                matF_zx[i][j]=matF_zx[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 1, u_h, i, 4);
+                matF_zy[i][j]=matF_zy[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 2, u_h, i, 4);
+                matF_zz[i][j]=matF_zz[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 3, u_h, i, 4);
+                matF_z0[i][j]=matF_z0[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 0, u_h, i, 4);
+                matF_0z[i][j]=matF_0z[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 3, u_h, i, 4);
 
-                matF_00[i][j]=matF_00[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 0, u_h, i, -1);
+                matF_00[i][j]=matF_00[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 0, u_h, i, 4);
             }//endof_for(j = 0; j <= i; ++j)
         }//endof_for(i = 0; i <= N; ++i)
 
@@ -674,36 +675,28 @@ build_rhs(FLOAT **D_x, FLOAT **D_y, FLOAT **D_z, DOF *u_F, VEC *rhs, INT nY)
     rhs_0f=phgMapCreateVec(mapu_F,1);
     phgVecDisassemble(rhs_0f);
 
-
     assert(u_F->dim == 1);
     
-    //myDebug
-    int nvalues=DofDim(u_F);
-    printf("nvalues=%d \n",nvalues);
-
     ForAllElements(g, e){ 
         for(i=0;i<N;++i){
             I[i] = phgMapE2L(mapu_F, 0, e, i);
-            vec_0f[i]=phgQuadBasParGradi(e, 0, u_F, i, -1);
-            phgQuadDofTimesBas(e,f_c,u_F,i,QUAD_DEFAULT,vec_0f1+i);
-            vec_xf[i]=phgQuadBasParGradi(e, 1, u_F, i, -1);
-            vec_yf[i]=phgQuadBasParGradi(e, 2, u_F, i, -1);
-            vec_zf[i]=phgQuadBasParGradi(e, 3, u_F, i, -1);
+            vec_0f[i]=phgQuadBasParGradi(e, 0, u_F, i, 4);
+            phgQuadDofTimesBas(e,f_c,u_F,i,4,vec_0f1+i);
+            vec_xf[i]=phgQuadBasParGradi(e, 1, u_F, i, 4);
+            vec_yf[i]=phgQuadBasParGradi(e, 2, u_F, i, 4);
+            vec_zf[i]=phgQuadBasParGradi(e, 3, u_F, i, 4);
         }//endof-for(i=0;i<N;++i)
 
         printf("test in build_rhs: test1\n");
+
         for(i=0;i<N;++i){
-            printf("f_c[%d]=%f ",i,*(phgQuadGetDofValues(e,f_c,QUAD_DEFAULT)+i));
             printf("vec_0f[%d]=%f  ",i,*(vec_0f+i));
             printf("vec_0f1[%d]=%f \n",i,*(vec_0f1+i));
         }
 
-
         phgVecAddEntries(rhs_0f, 0, N, I, vec_0f);
-        printf("test in build_rhs: test2\n");
         phgVecAddEntries(rhs_xf, 0, N, I, vec_xf);
         phgVecAddEntries(rhs_yf, 0, N, I, vec_yf);
-        printf("test in build_rhs: test3\n");
         phgVecAddEntries(rhs_zf, 0, N, I, vec_zf); 
     }//endof-ForAllElements(g,e)
 
@@ -715,6 +708,15 @@ build_rhs(FLOAT **D_x, FLOAT **D_y, FLOAT **D_z, DOF *u_F, VEC *rhs, INT nY)
             ++k;
         }
     }
+
+    phgMapDestroy(&mapu_F);
+
+    phgVecDestroy(&rhs_xf);
+    phgVecDestroy(&rhs_yf);
+    phgVecDestroy(&rhs_zf);
+    phgVecDestroy(&rhs_0f);
+
+
 }//endof-build_rhs
 /**********************************************************************************/
 /*--------------------------------------------------------------------------------*/
