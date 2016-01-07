@@ -308,7 +308,7 @@ MatA_multiply_MatB(BOOLEAN tran, INT n, FLOAT **A, FLOAT **B, FLOAT **C){
             for(j=0;j<n;j++){
                 val=0.0;
                 for(k=0;k<n;k++)
-                    val=val+A[k][i]*B[k][j];
+                    val+=A[k][i]*B[k][j];
                 *(*(C+i)+j)=val;
             }//endof-for(j=0;...)
         }//endof-for(i=0;...)
@@ -319,13 +319,64 @@ MatA_multiply_MatB(BOOLEAN tran, INT n, FLOAT **A, FLOAT **B, FLOAT **C){
             for(j=0;j<n;j++){
                 val=0.0;
                 for(k=0;k<n;k++)
-                    val=val+A[i][k]*B[k][j];
+                    val+=A[i][k]*B[k][j];
                 *(*(C+i)+j)=val;
             }//endof-for(j=0;...)
         }//endof-for(i=0;...)
     }//endof-if(tran==FALSE)
 
 }//endof-MatA_multiply_MatB
+
+
+
+/*
+ * The following code is also to compute the matrixes A*B=C,
+ * but this time the A and B may have different rows and colls.
+ * Also:
+ * tran=TRUE stands for C= A^T * B, tran=FALSE stands for C= A * B.
+ */
+void
+MatA_x_MatB(BOOLEAN tran, INT rowA, INT colA, FLOAT **A, 
+        INT rowB, INT colB, FLOAT **B, FLOAT **C){
+    
+    INT i,j,k;
+    FLOAT r;
+
+    if(tran==FLASE){
+        if(colA!=rowB){
+            printf("In function 'MatA_x_MatB()', tran==FLASE,
+                    but colA!=rowB, abort!");
+            abort();
+        }//endof_if(colA!=rowB)
+
+        for(i=0;i<rowA;++i){
+            for(j=0;j<colB;++j){
+                r=0.0;
+                for(k=0;k<rowB;++k)
+                    r+=A[i][k]*B[k][j];
+                *(*(C+i)+j)=r;
+            }
+        }//endof_for(i=0;i<rowA;++i)
+    }//endof_if(tran==FLASE)
+
+    if(tran==TRUE){
+        if(rowA!=rowB){
+            printf("In function 'MatA_x_MatB()', tran==TRUE,
+                    but rowA!=rowB, abort!");
+            abort();
+        }//endof_if(colA!=rowB)
+
+        for(i=0;i<colA;++i){
+            for(j=0;j<colB;++j){
+                r=0.0;
+                for(k=0;k<rowB;++k)
+                    r+=A[k][i]*B[k][j];
+                *(*(C+i)+j)=r;
+            }
+        }//endof_for(i=0;i<rowA;++i)
+    }//endof_if(tran==TRUE)
+
+}//endof
 /*--------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------------*/
 

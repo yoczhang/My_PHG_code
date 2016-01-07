@@ -1,0 +1,305 @@
+/*
+ * The fix_boundary_conditions.c is aimed to deal the 
+ * boundary conditions 
+ */
+
+# include "phg.h"
+# include "int_associated_legendre_polyns.h"
+# include "handle_boundary_conditions.h"
+# include <stdlib.h>
+# include <stdio.h>
+# include <math.h>
+# include <time.h>
+# include <string.h>
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+/*
+ * To compute the coefficient D(m)
+ */
+FLOAT 
+D(int m)
+{
+    int flag;
+    int delta;
+    FLOAT v;
+
+    m=abs(m);
+
+    if(m%2==0)
+        flag=1;
+    else
+        flag=-1;
+
+    if(m==0)
+        delta=1;
+    else
+        delta=0;
+
+    v=flag*sqrt((FLOAT)(2-delta)/(4*M_PI));
+
+    return v;
+}//endof_D()
+
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+/*
+ * To compute Ip(l, m, l1, m1)
+ */
+FLOAT
+Ip(int l, int m, int l1, int m1, int Gauss_order, FLOAT *Gauss_points, 
+        FLOAT *Gauss_weights)
+{
+    FLOAT v;
+    v=int_associated_legendre_polyns(l,m,l1,m1,Gauss_order,Gauss_points,Gauss_weights);
+    return v;
+}//endof_Ip()
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+FLOAT
+I(int l, int m, int l1, int m1, int lable, int Gauss_order, FLOAT *Gauss_points_l, 
+        FLOAT *Gauss_weights_l, FLOAT *Gauss_points_r, FLOAT *Gauss_weights_r)
+/*
+ * int lable standsfor the different faces.
+ * lable=1,2 standsfor the faces x-,x+
+ * lable=3,4 standsfor the faces y-,y+
+ * lable=5,6 standsfor the faces z-,z+
+ */
+{
+    FLOAT v;
+    FLOAT *Gauss_points, *Gauss_weights;
+
+    if(lable==1 || lable==2 || lable==3 || lable==4){
+        if(l==l1 && m==m1 && m!=0)
+            v=D(m)*D(m1)*(M_PI);
+        else if(l==l1 && m==m1 && m==0)
+            v=D(m)*D(m1)*2*(M_PI);
+        else
+            v=0.0;
+
+        return v;
+    }
+    else if(lable==5){
+        Gauss_points=Gauss_points_r;
+        Gauss_weights=Gauss_weights_r;
+        if(m==m1 && m!=0)
+            v=D(m)*D(m1)*(M_PI)*Ip(l,m,l1,m1,Gauss_order,Gauss_points,Gauss_weights);
+        else if(m==m1 && m==0)
+            v=D(m)*D(m1)*(2*M_PI)*Ip(l,m,l1,m1,Gauss_order,Gauss_points,Gauss_weights);
+        else
+            v=0.0;
+
+        return v;
+    }
+    else if(lable==6){
+        Gauss_points=Gauss_points_l;
+        Gauss_weights=Gauss_weights_l;
+        if(m==m1 && m!=0)
+            v=D(m)*D(m1)*(M_PI)*Ip(l,m,l1,m1,Gauss_order,Gauss_points,Gauss_weights);
+        else if(m==m1 && m==0)
+            v=D(m)*D(m1)*(2*M_PI)*Ip(l,m,l1,m1,Gauss_order,Gauss_points,Gauss_weights);
+        else
+            v=0.0;
+
+        return v;
+    }
+    else{
+        printf("In the function 'I()', the 'lable' is wrong! exit!\n");
+        exit(-1);
+    }
+}
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+void
+buildMat_fixed_boundary_conditions(int N, int lable, int Gauss_order, 
+        FLOAT *Gauss_points_l, FLOAT *Gauss_weights_l, FLOAT *Gauss_points_r, 
+        FLOAT *Gauss_weights_r, FLOAT **C_1)
+/*
+ * This function is aimed to build the fixed boundary conditions' matrixes.
+ *
+ * Input: N, the PN approximating number, is odd.
+ *        lable, the lable of the boundary face.
+ *        Gauss_order, the number of Gausspoints.
+ *        Gauss_points_l, the Gausspoints on interval [-1,0].
+ *        Gauss_weights_l, the Gaussweights according Gauss_points_l.
+ *        Gauss_points_r, the Gausspoints on interval [0,1].
+ *        Gauss_weights_r, the Gaussweights according Gauss_points_r.
+ *        
+ * Output: C_1, the matirx.
+ */
+{
+    int i, j;
+    int l, m, l1, m1;
+
+    //l1 is odd, so l1 initialization is 1.
+    for(l1=1;l1<=N;l1+=2){
+        for(m1=-l1;m1<=l1;m1++){
+            i=l1*(l1+1)/2+m1;
+                
+            for(l=0;l<=N;l++){
+                for(m=-l;m<=l;m++){
+                    j=l*l+l+m;
+                    *(*(C_1+i)+j)=I(l, m, l1, m1, lable, Gauss_order, Gauss_points_l, 
+                            Gauss_weights_l, Gauss_points_r, Gauss_weights_r);
+                }//endof_for(m=-l;m<=l;m++)
+            }//endof_for(l=0;l<=N;l++)
+
+        }//endof_for(m=-l1;m<=l1;m++)
+    }//endof_for(l1=1;l1<=N;l1+=2)
+
+}//endof_fixed_boundary_conditins()
+
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+void
+buildMat_reflective_boundary_conditions(int N, FLOAT **C_2X, FLOAT **C_2Y, FLOAT **C_2Z)
+/*
+ * This function is aimed to build the reflective boundary conditions' matrixes.
+ *
+ * Input: N, the PN approximating number, is odd.
+ *
+ * Output: C_2X, the matrix based on the boundary faces x- or x+.
+ *         C_2Y, the matrix based on the boundary faces y- or y+.
+ *         C_2Z, the matrix based on the boundary faces z- or z+.
+ */
+{
+    int i, j;
+    int l, m;
+
+    int leap_pre, leap_now;
+
+    int in_XY;// the number of rows based on x or y boundary faces.
+    int in_Z; // the number of rows based on z boundary faces.
+    int jn;   // the number of columns.
+
+    in_XY=N*(N+1)/2;
+    in_Z=N*(N+1)/2; // there the in_xy and in_z exactly equivalent.
+    jn=(N+1)*(N+1);
+
+    //initialization
+    for(i=0;i<in_XY;i++){
+        for(j=0;j<jn;j++){
+            *(*(C_2X+i)+j)=0.0;
+            *(*(C_2Y+i)+j)=0.0;
+            *(*(C_2Z+i)+j)=0.0;
+        }
+    }//endof_for(i=0;...)
+
+    /* assignment the C_2X matrix */
+    for(l=1;l<=N;l++){
+        for(m=1;m<=l;m++){
+            i=l*(l-1)/2+m-1;
+
+            if(m%2==1)
+                j=l*l+l+m;
+            else
+                j=l*l+l+(-m);
+
+            *(*(C_2X+i)+j)=1.0;
+        }
+    }
+
+    /* assignment the C_2Y matrix */
+    for(l=1;l<=N;l++){
+        for(m=1;m<=l;m++){
+            i=l*(l-1)/2+m-1;
+            j=l*l+l+(-m);
+            *(*(C_2Y+i)+j)=1.0;
+        }
+    }
+
+    /* assignment the C_2Z matrix */
+    for(l=1;l<=N;l++){
+        leap_pre=0;
+        leap_now=0;
+
+        for(m=-l;m<=l;m++){
+            if((l+m)%2==1)
+                leap_now++;
+
+            if(leap_now-leap_pre==1){
+                i=l*(l-1)/2+(leap_now-1);
+                j=l*l+l+m;
+
+                *(*(C_2Z+i)+j)=1.0;
+
+                leap_pre=leap_now;
+            }
+
+        }//endof_for(m=-l;...)
+    }//endof_for(l=1;...)
+
+}//endof_buildMat_reflective_boundary_conditions()
+
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
+
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+void
+build_coefD_xx_bd_()
+{
+
+
+
+}//endof_build_coefD_xx_bd_()
+
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+
+
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+
+
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+
+
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+

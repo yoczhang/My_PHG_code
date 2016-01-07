@@ -1,8 +1,8 @@
-FILES =	Makefile test3.c
+FILES =	Makefile test4.c
 
-default: lib test3
+default: lib test4
 
-all: lib test3
+all: lib test4
 
 examples.zip: ${FILES}
 	@zip -9 -u -y $@ $^
@@ -23,6 +23,7 @@ include ../../Makefile.inc
 
 #test1.o:		../../src/libphg${LIB_SUFFIX} test1.c
 #matrix_test.o:		../../src/libphg${LIB_SUFFIX} matrix_test.c
-test3.o:		../../src/libphg${LIB_SUFFIX} test3.c
-
+#test3.o:		../../src/libphg${LIB_SUFFIX} test3.c
+#legendre_rule.o:        ../../src/libphg${LIB_SUFFIX} legendre_rule.c
+test4.o:		../../src/libphg${LIB_SUFFIX} test4.c
 .PHONY: default all clean distclean lib

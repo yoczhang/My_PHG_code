@@ -29,6 +29,8 @@
 
 #include "phg.h"
 #include "other_functions.h"
+#include "int_associated_legendre_polyns.h"
+#include "handle_boundary_conditions.h"
 #include <string.h>
 #include <math.h>  
 
@@ -39,7 +41,7 @@ typedef SIMPLEX ELEMENT;
 
 #define PN 3  /*  P3 approximate */
 #define nY ((PN+1)*(PN+1))
-#define Space_basis DOF_P1;
+#define Space_basis DOF_P1
     /* 
      * it is easy to compute that in P_N(0,1,...N) approximate the number 
      * of how many Y_l^m is (N+1)*(N+1). 
@@ -88,8 +90,12 @@ main(int argc, char *argv[])
     INT submesh_threshold = 1000;
     FLOAT lif_threshold = 1.2;
 
-    //myDebug
-    printf("test0\n");
+    BOOLEAN tranT=TRUE;
+    BOOLEAN tranF=FALSE;
+    INT im, jm;
+    INT Gauss_order=5;
+    FLOAT *Gauss_points_l, *Gauss_points_r;
+    FLOAT *Gauss_weights_l, *Gauss_weights_r;
 
     char *fn = "./mytest.mesh";//mytest.mesh is the simplest mesh: is a cube and has only 6 elements.
     GRID *g;
@@ -101,30 +107,75 @@ main(int argc, char *argv[])
     FLOAT L2error, indicator;
     size_t mem_peak;
 
+    MAP *rmap, *cmap, *rhsmap;
+
+    /*
+     * 下面是声明块矩阵中的组成元素，pmatF_xx.. 的含义
+     * 同 maxwell-complex.c 的 pmat.
+     * 并且下面的 F_xx... 在不强调的情况下都是在四面体
+     * 内的体积分.
+     * XmFbd_00 则是在边界面X-上的积分，00 则表示不对基函数
+     * 求偏导，直接对基函数的积分.
+     * 同样，pmatXmFbd_00 则是对应Fbd_00 的.
+     * Xm表示X-, Xp表示X+
+     */
     MAT *F_xx, *pmatF_xx[nY*nY], *F_xy, *pmatF_xy[nY*nY], *F_xz, *pmatF_xz[nY*nY], *F_x0, *pmatF_x0[nY*nY], *F_0x, *pmatF_0x[nY*nY];
     MAT *F_yx, *pmatF_yx[nY*nY], *F_yy, *pmatF_yy[nY*nY], *F_yz, *pmatF_yz[nY*nY], *F_y0, *pmatF_y0[nY*nY], *F_0y, *pmatF_0y[nY*nY]; 
     MAT *F_zx, *pmatF_zx[nY*nY], *F_zy, *pmatF_zy[nY*nY], *F_zz, *pmatF_zz[nY*nY], *F_z0, *pmatF_z0[nY*nY], *F_0z, *pmatF_0z[nY*nY];
     MAT *F_00, *pmatF_00[nY*nY];
-    VEC *Q=NULL, *rhs=NULL;
 
-    //myDebug
-    printf("test1\n");
+    MAT *XmFbd_00, *pmatXmFbd_00[nY*nY], *XpFbd_00, *pmatXpFbd_00[nY*nY];
+    MAT *YmFbd_00, *pmatYmFbd_00[nY*nY], *YpFbd_00, *pmatYpFbd_00[nY*nY];
+    MAT *ZmFbd_00, *pmatZmFbd_00[nY*nY], *ZpFbd_00, *pmatZpFbd_00[nY*nY];
+    
+    VEC *Q=NULL, *rhs=NULL;
 
     MAT *BlockMat_DxF[16]; //Because in the last there will be 16 blockmatrixes to add up together.
     MAT *matDF; // matDF=BlockMat_DxF[0]+BlockMat_DxF[1]+...+BlockMat_DxF[15];
     MAT *BlockMat_DxF_rhs[4];
     MAT *matDF_rhs;
 
+    /*
+     * 注意下面的BlockMat_DxFbd 的大小是 6，这是因为目前所用的网格是一个立方体，
+     * 有6个面，每个面都是一个边界
+     */
+    MAT *BlockMat_DxF_bd[6];
+    MAT *matDF_bd;
+
+    /*
+     * 根据maxwell-complex.c中分块矩阵的形式，系数矩阵和基矩阵都要排列成一维的向量形式,
+     * 具体可以参考 maxwell-complex.c
+     */
     FLOAT coefD_xx[nY*nY], coefD_xy[nY*nY], coefD_xz[nY*nY], coefD_x0[nY*nY], coefD_0x[nY*nY];
     FLOAT coefD_yx[nY*nY], coefD_yy[nY*nY], coefD_yz[nY*nY], coefD_y0[nY*nY], coefD_0y[nY*nY];
     FLOAT coefD_zx[nY*nY], coefD_zy[nY*nY], coefD_zz[nY*nY], coefD_z0[nY*nY], coefD_0z[nY*nY];
     FLOAT coefD_00[nY*nY];
+
     FLOAT coefD_x0_rhs[nY*nY], coefD_y0_rhs[nY*nY], coefD_z0_rhs[nY*nY], coefD_00_rhs[nY*nY];
 
-    MAP *rmap, *cmap, *rhsmap;
+    FLOAT coefD_Xm_bd[nY*nY], coefD_Xp_bd[nY*nY];
+    FLOAT coefD_Ym_bd[nY*nY], coefD_Yp_bd[nY*nY];
+    FLOAT coefD_Zm_bd[nY*nY], coefD_Zp_bd[nY*nY];
 
-    //myDebug
-    printf("test2\n");
+    /*
+     * 接下来声明的变量FLOAT**D_x 是由下面的关系产生的
+     * \Omega_x \cdot \vec{Y}^T = \vec{Y}^T \cdot D_x.
+     */
+    FLOAT **D_x, **D_y, **D_z;
+
+    /* 
+     * Compute D_xx=(D_x)^T * D_x
+     * ...
+     * Dd_x0 stands for D^{\Delta}_{x0} ...
+     * I0 stands for the nY*nY identity matrix, 
+     * Delta0 stands for the nY*nY \underline{\Delta}^0 matrix.
+     */
+    FLOAT **D_xx, **D_xy, **D_xz, **D_x0, **Dd_x0, **D_0x, **Dd_0x;
+    FLOAT **D_yx, **D_yy, **D_yz, **D_y0, **Dd_y0, **D_0y, **Dd_0y;
+    FLOAT **D_zx, **D_zy, **D_zz, **D_z0, **Dd_z0, **D_0z, **Dd_0z;
+    FLOAT **Ie, **Delta0;
+    FLOAT **temp;
+
 
     phgOptionsRegisterFloat("a", "Coefficient", &a);
     phgOptionsRegisterFloat("tol", "Tolerance", &tol);
@@ -148,33 +199,16 @@ main(int argc, char *argv[])
 
     phgRefineAllElements(g, pre_refines);
 
-    //myDebug
-    printf("test3\n");
+
+
     
     u_F = phgDofNew(g, Space_basis, 1, "u_F", DofInterpolation);
     u_F->DB_mask = BDRY_MASK;
 
-    //myDebug
-    printf("test4\n");
-
     u_solver = phgDofNew(g, Space_basis, nY, "u_solver", DofInterpolation);
     // It's very important to comprehend the parameter "nY" in phgDofNew().
-    
-    //myDebug
-    printf("test5\n");
 
     error = phgDofNew(g, DOF_P0, 1, "error", DofNoAction);
-
-    //myDebug
-    printf("test6\n");
-
-    //myDebug
-    printf("test7\n"); 
-
-    
-    
-    int im, jm;
-    FLOAT **D_x, **D_y, **D_z;
     
     D_x=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
     D_y=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
@@ -193,30 +227,10 @@ main(int argc, char *argv[])
             *(*(D_z+im)+jm)=0.0;
         }
     }
-
-    //myDebug
-    printf("test8\n");
  
     build_D_x_matrix(nY, PN, D_x);
     build_D_y_matrix(nY, PN, D_y);
     build_D_z_matrix(nY, PN, D_z);
-
-    //myDebug
-    printf("test9\n");
-
-    /* 
-     * Compute D_xx=(D_x)^T * D_x
-     * ...
-     * Dd_x0 stands for D^{\Delta}_{x0} ...
-     * I0 stands for the nY*nY identity matrix, 
-     * Delta0 stands for the nY*nY \underline{\Delta}^0 matrix.
-     */
-    FLOAT **D_xx, **D_xy, **D_xz, **D_x0, **Dd_x0, **D_0x, **Dd_0x;
-    FLOAT **D_yx, **D_yy, **D_yz, **D_y0, **Dd_y0, **D_0y, **Dd_0y;
-    FLOAT **D_zx, **D_zy, **D_zz, **D_z0, **Dd_z0, **D_0z, **Dd_0z;
-    FLOAT **Ie, **Delta0;
-    FLOAT **temp;
-
 
     D_xx=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
     D_xy=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
@@ -289,8 +303,6 @@ main(int argc, char *argv[])
     }
     *(*(Delta0+0)+0)=1.0;
 
-    BOOLEAN tranT=TRUE;
-    BOOLEAN tranF=FALSE;
 
     MatA_multiply_MatB(tranT, nY, D_x, D_x, D_xx);
     MatA_multiply_MatB(tranT, nY, D_x, D_y, D_xy);
@@ -393,9 +405,101 @@ main(int argc, char *argv[])
     }
     arrangeMatrixInRows(nY,nY,temp,coefD_00_rhs);
 
+    Gauss_points_l=(FLOAT *)malloc(Gauss_order * sizeof(FLOAT));
+    Gauss_weights_l=(FLOAT *)malloc(Gauss_order * sizeof(FLOAT));
+    get_Gauss_points_weights(-1, 0, Gauss_order, Gauss_points_l, Gauss_weights_l);
 
-    //printf("next is return 0\n");
-    //return 0;
+    Gauss_points_r=(FLOAT *)malloc(Gauss_order * sizeof(FLOAT));
+    Gauss_weights_r=(FLOAT *)malloc(Gauss_order * sizeof(FLOAT));
+    get_Gauss_points_weights(0, 1, Gauss_order, Gauss_points_r, Gauss_weights_r);
+
+   build_coefD_xx_bd_();
+
+
+    /*---------------------------------------------------------------------------------------*/
+    // following is the test 
+
+    FLOAT len_v;
+    len_v=0.0;
+
+    len_v=int_associated_legendre_polyns(5,3,5,2,Gauss_order,Gauss_points_l,Gauss_weights_l);
+
+    /*
+    for(im=0;im<Gauss_order;im++){
+        printf("GaussPoints[%d]=%f ,GaussWeights[%d]=%f \n",im,*(Gauss_points_l+im),im,*(Gauss_weights_l+im));
+    }
+
+    printf("P_5^3=%f \n",len_v);
+    printf("PI=%f \n",M_PI);
+    printf("fllowing is return 0\n");
+    return 0;
+    */
+    
+
+    /*
+    FLOAT **C_1;
+    int ni=(PN+1)*(PN+2)/2;
+    int nj=nY;
+
+    C_1=(FLOAT **)malloc(sizeof(FLOAT *)*ni);
+    for(im=0;im<nj;im++){
+        *(C_1+im)=(FLOAT *)malloc(nj*sizeof(FLOAT));
+    }
+
+    buildMat_fixed_boundary_conditions(PN, 5, Gauss_order, Gauss_points_l, Gauss_weights_l, 
+            Gauss_points_r, Gauss_weights_r, C_1);
+
+    for(im=0;im<ni;im++){
+        for(jm=0;jm<nj;jm++){
+            if(*(*(C_1+im)+jm)!=0.0)
+                printf("C_1[%d][%d]=%f   ",im,jm,*(*(C_1+im)+jm));
+        }
+        printf("\n");
+    }
+    */
+
+    FLOAT **C_2X, **C_2Y, **C_2Z;
+    int in_XY;
+    int in_Z;
+    int jn;
+    
+    in_XY=PN*(PN+1)/2;
+    in_Z=PN*(PN+1)/2; // there the in_xy and in_z exactly equivalent.
+    jn=nY;
+
+    C_2X=(FLOAT **)malloc(sizeof(FLOAT *)*in_XY);
+    C_2Y=(FLOAT **)malloc(sizeof(FLOAT *)*in_XY);
+    C_2Z=(FLOAT **)malloc(sizeof(FLOAT *)*in_XY);
+    for(im=0;im<jn;im++){
+        *(C_2X+im)=(FLOAT *)malloc(jn*sizeof(FLOAT));
+        *(C_2Y+im)=(FLOAT *)malloc(jn*sizeof(FLOAT));
+        *(C_2Z+im)=(FLOAT *)malloc(jn*sizeof(FLOAT));
+    }
+
+
+    buildMat_reflective_boundary_conditions(PN, C_2X, C_2Y, C_2Z);
+
+    /*
+    for(im=0;im<in_XY;im++){
+        for(jm=0;jm<jn;jm++){
+            if(*(*(C_2Z+im)+jm)!=0)
+            printf("C_2Z[%d][%d]=%f   ",im,jm,*(*(C_2Z+im)+jm));
+        }
+        printf("\n\n");
+    }
+    */
+
+    printf("DofTypeDim(u_solver)=%d \n",DofTypeDim(u_solver));
+    printf("DofDim(u_solver)=%d \n",DofDim(u_solver));
+
+
+
+
+    printf("fllowing is return 0\n");
+    return 0;
+
+    // ending the test
+    /*---------------------------------------------------------------------------------------*/
 
     while (TRUE) 
     {
@@ -449,7 +553,6 @@ main(int argc, char *argv[])
         F_0y = phgMapCreateMat(rmap, cmap);
         F_0y->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
 
-
         F_zx = phgMapCreateMat(rmap, cmap);
         F_zx->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
         F_zy = phgMapCreateMat(rmap, cmap);
@@ -461,9 +564,21 @@ main(int argc, char *argv[])
         F_0z = phgMapCreateMat(rmap, cmap);
         F_0z->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
 
-
         F_00 = phgMapCreateMat(rmap, cmap);
         F_00->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
+
+        XmFbd_00 = phgMapCreateMat(rmap, cmap);
+        XmFbd_00->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
+        XpFbd_00 = phgMapCreateMat(rmap, cmap);
+        XpFbd_00->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
+        YmFbd_00 = phgMapCreateMat(rmap, cmap);
+        YmFbd_00->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
+        YpFbd_00 = phgMapCreateMat(rmap, cmap);
+        YpFbd_00->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
+        ZmFbd_00 = phgMapCreateMat(rmap, cmap);
+        ZmFbd_00->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
+        ZpFbd_00 = phgMapCreateMat(rmap, cmap);
+        ZpFbd_00->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
 
         Q = phgMapCreateVec(rhsmap, 1);
         /*-------------------------------------------------------*/
@@ -495,6 +610,13 @@ main(int argc, char *argv[])
             pmatF_0z[im]=F_0z;
 
             pmatF_00[im]=F_00;
+
+            pmatXmFbd_00[im]=XmFbd_00;
+            pmatXpFbd_00[im]=XpFbd_00;
+            pmatYmFbd_00[im]=YmFbd_00;
+            pmatYpFbd_00[im]=YpFbd_00;
+            pmatZmFbd_00[im]=ZmFbd_00;
+            pmatZpFbd_00[im]=ZpFbd_00;
         }//endof_for(im=0;...)
         
         BlockMat_DxF[0]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_xx, coefD_xx, NULL);
@@ -521,6 +643,8 @@ main(int argc, char *argv[])
         BlockMat_DxF_rhs[1]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_y0, coefD_y0_rhs, NULL);
         BlockMat_DxF_rhs[2]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_z0, coefD_z0_rhs, NULL);
         BlockMat_DxF_rhs[3]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_00, coefD_00_rhs, NULL);
+
+
         /*-------------------------------------------------------*/
         /*------------ assemble the block matrix ... ------------*/
 
@@ -689,6 +813,16 @@ main(int argc, char *argv[])
     phgPrintf("Final mesh written to \"%s\".\n",
 	phgExportVTK(g, "simplest.vtk", u_h, error, NULL));
 #endif
+
+    free(coefD_xx); free(coefD_xy); free(coefD_xz); free(coefD_x0); free(coefD_0x);
+    free(coefD_yx); free(coefD_yy); free(coefD_yz); free(coefD_y0); free(coefD_0y);
+    free(coefD_zx); free(coefD_zy); free(coefD_zz); free(coefD_z0); free(coefD_0z);
+    free(coefD_00); 
+    free(coefD_x0_rhs); free(coefD_y0_rhs); free(coefD_z0_rhs); free(coefD_00_rhs);
+
+    free(coefD_Xm_bd); free(coefD_Xp_bd); 
+    free(coefD_Ym_bd); free(coefD_Yp_bd);
+    free(coefD_Zm_bd); free(coefD_Zp_bd);
 
     phgDofFree(&u_F);
     phgDofFree(&u_solver);

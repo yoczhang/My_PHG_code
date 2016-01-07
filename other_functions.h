@@ -83,6 +83,18 @@ void build_D_z_matrix(INT nY, INT PN, FLOAT **D_z);
 void
 MatA_multiply_MatB(BOOLEAN tran, INT n, FLOAT **A, FLOAT **B, FLOAT **C);
 
+
+
+/*
+ * The following code is also to compute the matrixes A*B=C,
+ * but this time the A and B may have different rows and colls.
+ * Also:
+ * tran=TRUE stands for C= A^T * B, tran=FALSE stands for C= A * B.
+ */
+void
+MatA_x_MatB(BOOLEAN tran, INT rowA, INT colA, FLOAT **A, 
+        INT rowB, INT colB, FLOAT **B, FLOAT **C);
+
 /**********************************************************************************/
 /*--------------------------------------------------------------------------------*/
 
