@@ -384,7 +384,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
             }//endof_if(1==reflected_bd_num[i])
         }//endof_for(i=0;i<len_refl;++i)
 
-        if(fg_coefXm!=0)
+        if(fg_coefXm!=0){
             matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
             for(j=0;j<nY;++j)
                 *(matAxmatB+j)=(FLOAT *)calloc(nY,sizeof(FLOAT));
@@ -400,6 +400,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
              }
              free(matAxmatB);
              matAxmatB=NULL;
+        }//endof_if(fg_coefXm!=0)
     }//endof_if(fg_coefXm==0)
 
     if(fg_coefXm==0)
@@ -459,7 +460,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
             }//endof_if(2==reflected_bd_num[i])
         }//endof_for(i=0;i<len_refl;++i)
 
-        if(fg_coefXp!=0)
+        if(fg_coefXp!=0){
             matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
             for(j=0;j<nY;++j)
                 *(matAxmatB+j)=(FLOAT *)calloc(nY,sizeof(FLOAT));
@@ -475,6 +476,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
              }
              free(matAxmatB);
              matAxmatB=NULL;
+        }//endof_if(fg_coefXp!=0)
     }//endof_if(fg_coefXp==0)
 
     if(fg_coefXp==0)
@@ -500,7 +502,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
             }//endof_if(3==fixed_bd_num[i])
         }//endof_for(i=0;i<len_fixed;++i)
 
-        if(fg_coefYm!=0)
+        if(fg_coefYm!=0){
             matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
             for(j=0;j<nY;++j)
                 *(matAxmatB+j)=(FLOAT *)calloc(nY,sizeof(FLOAT));
@@ -523,6 +525,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
              }
              free(matAxmatB);
              matAxmatB=NULL;
+        }//endof_if(fg_coefYm!=0)
     }//endof_if(fg_coefYm==0)
 
     if(fg_coefYm==0){
@@ -534,7 +537,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
             }//endof_if(3==reflected_bd_num[i])
         }//endof_for(i=0;i<len_refl;++i)
 
-        if(fg_coefYm!=0)
+        if(fg_coefYm!=0){
             matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
             for(j=0;j<nY;++j)
                 *(matAxmatB+j)=(FLOAT *)calloc(nY,sizeof(FLOAT));
@@ -550,6 +553,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
              }
              free(matAxmatB);
              matAxmatB=NULL;
+        }//endof_if(fg_coefYm!=0)
     }//endof_if(fg_coefYm==0)
 
     if(fg_coefYm==0)
@@ -574,7 +578,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
             }//endof_if(4==fixed_bd_num[i])
         }//endof_for(i=0;i<len_fixed;++i)
 
-        if(fg_coefYp!=0)
+        if(fg_coefYp!=0){
             matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
             for(j=0;j<nY;++j)
                 *(matAxmatB+j)=(FLOAT *)calloc(nY,sizeof(FLOAT));
@@ -597,6 +601,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
              }
              free(matAxmatB);
              matAxmatB=NULL;
+        }//endof_if(fg_coefYp!=0)
     }//endof_if(fg_coefYp==0)
 
     if(fg_coefYp==0){
@@ -608,7 +613,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
             }//endof_if(4==reflected_bd_num[i])
         }//endof_for(i=0;i<len_refl;++i)
 
-        if(fg_coefYp!=0)
+        if(fg_coefYp!=0){
             matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
             for(j=0;j<nY;++j)
                 *(matAxmatB+j)=(FLOAT *)calloc(nY,sizeof(FLOAT));
@@ -624,6 +629,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
              }
              free(matAxmatB);
              matAxmatB=NULL;
+        }//endof_if(fg_coefYp!=0)
     }//endof_if(fg_coefYp==0)
 
     if(fg_coefYp==0)
@@ -649,7 +655,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
             }//endof_if(5==fixed_bd_num[i])
         }//endof_for(i=0;i<len_fixed;++i)
 
-        if(fg_coefZm!=0)
+        if(fg_coefZm!=0){
             matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
             for(j=0;j<nY;++j)
                 *(matAxmatB+j)=(FLOAT *)calloc(nY,sizeof(FLOAT));
@@ -672,6 +678,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
              }
              free(matAxmatB);
              matAxmatB=NULL;
+        }//endof_if(fg_coefZm!=0)
     }//endof_if(fg_coefZm==0)
 
     if(fg_coefZm==0){
@@ -683,8 +690,8 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
             }//endof_if(5==reflected_bd_num[i])
         }//endof_for(i=0;i<len_refl;++i)
 
-        if(fg_coefZm!=0)
-           matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
+        if(fg_coefZm!=0){
+            matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
             for(j=0;j<nY;++j)
                 *(matAxmatB+j)=(FLOAT *)calloc(nY,sizeof(FLOAT));
 
@@ -699,6 +706,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
              }
              free(matAxmatB);
              matAxmatB=NULL;
+        }//endof_if(fg_coefZm!=0)
     }//endof_if(fg_coefZm==0)
 
     if(fg_coefZm==0)
@@ -723,7 +731,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
             }//endof_if(6==fixed_bd_num[i])
         }//endof_for(i=0;i<len_fixed;++i)
 
-        if(fg_coefZp!=0)
+        if(fg_coefZp!=0){
             matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
             for(j=0;j<nY;++j)
                 *(matAxmatB+j)=(FLOAT *)calloc(nY,sizeof(FLOAT));
@@ -746,6 +754,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
              }
              free(matAxmatB);
              matAxmatB=NULL;
+        }//endof_if(fg_coefZp!=0)
     }//endof_if(fg_coefZp==0)
 
     if(fg_coefZp==0){
@@ -757,8 +766,8 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
             }//endof_if(6==reflected_bd_num[i])
         }//endof_for(i=0;i<len_refl;++i)
 
-        if(fg_coefZp!=0)
-           matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
+        if(fg_coefZp!=0){
+            matAxmatB=(FLOAT **)calloc(nY,sizeof(FLOAT *));
             for(j=0;j<nY;++j)
                 *(matAxmatB+j)=(FLOAT *)calloc(nY,sizeof(FLOAT));
 
@@ -773,6 +782,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
              }
              free(matAxmatB);
              matAxmatB=NULL;
+        }//endof_if(fg_coefZp!=0)
     }//endof_if(fg_coefZp==0)
 
     if(fg_coefZp==0)
