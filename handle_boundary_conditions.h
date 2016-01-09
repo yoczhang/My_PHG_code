@@ -4,6 +4,7 @@
  */
 
 # include "phg.h"
+#include "other_functions.h"
 # include "int_associated_legendre_polyns.h"
 # include <stdlib.h>
 # include <stdio.h>

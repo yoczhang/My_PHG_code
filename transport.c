@@ -51,6 +51,18 @@ FLOAT sigma_t = 1.0;
 FLOAT sigma_s = 0.5;
 FLOAT q_0 = 1.0;
 
+/*
+ * 1,2 standsfor the faces x-,x+
+ * 3,4 standsfor the faces y-,y+
+ * 5,6 standsfor the faces z-,z+
+ *
+ * if the following arry is changed, remember to 
+ * modify the function:
+ * void build_coefD_xx_bd_( ).
+ */
+INT fixed_bd_num[3]={1,3,5};
+INT reflected_bd_num[3]={2,4,6};
+
 static FLOAT a = 1.0;
 
 static double
@@ -413,7 +425,7 @@ main(int argc, char *argv[])
     Gauss_weights_r=(FLOAT *)malloc(Gauss_order * sizeof(FLOAT));
     get_Gauss_points_weights(0, 1, Gauss_order, Gauss_points_r, Gauss_weights_r);
 
-   build_coefD_xx_bd_();
+    build_coefD_xx_bd_();
 
 
     /*---------------------------------------------------------------------------------------*/
@@ -442,7 +454,7 @@ main(int argc, char *argv[])
     int nj=nY;
 
     C_1=(FLOAT **)malloc(sizeof(FLOAT *)*ni);
-    for(im=0;im<nj;im++){
+    for(im=0;im<ni;im++){
         *(C_1+im)=(FLOAT *)malloc(nj*sizeof(FLOAT));
     }
 
@@ -470,7 +482,7 @@ main(int argc, char *argv[])
     C_2X=(FLOAT **)malloc(sizeof(FLOAT *)*in_XY);
     C_2Y=(FLOAT **)malloc(sizeof(FLOAT *)*in_XY);
     C_2Z=(FLOAT **)malloc(sizeof(FLOAT *)*in_XY);
-    for(im=0;im<jn;im++){
+    for(im=0;im<in_XY;im++){
         *(C_2X+im)=(FLOAT *)malloc(jn*sizeof(FLOAT));
         *(C_2Y+im)=(FLOAT *)malloc(jn*sizeof(FLOAT));
         *(C_2Z+im)=(FLOAT *)malloc(jn*sizeof(FLOAT));
