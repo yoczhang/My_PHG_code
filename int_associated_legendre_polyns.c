@@ -66,7 +66,7 @@ int_associated_legendre_polyns(int l, int m, int l1, int m1, int mm, FLOAT *x,
         FLOAT *wts)
 {
     int i;
-    int n_fac=factorial(l+m);
+    //int n_fac=factorial(l+m);
     FLOAT v;
     FLOAT *val_pm_polyn;
     FLOAT *val_pm_polyn1;
@@ -85,8 +85,8 @@ int_associated_legendre_polyns(int l, int m, int l1, int m1, int mm, FLOAT *x,
     val_pm_polyn=pm_polynomial_value(mm, l, m, x)+l*mm;
     val_pm_polyn1=pm_polynomial_value(mm, l1, m1, x)+l1*mm;
 
-    for(i=0;i<mm;i++)
-        printf("val_pm_polyn[%d]=%f \n",i,*(val_pm_polyn+i));
+    //for(i=0;i<mm;i++)
+        //printf("val_pm_polyn[%d]=%f \n",i,*(val_pm_polyn+i));
 
     C_lm=sqrt( ((FLOAT)(2*l+1)*factorial(l-m))/factorial(l+m) );
     C_l1m1=sqrt( ((FLOAT)(2*l1+1)*factorial(l1-m1))/factorial(l1+m1) );
@@ -106,7 +106,7 @@ int_associated_legendre_polyns(int l, int m, int l1, int m1, int mm, FLOAT *x,
 
     v*=C_lm*C_l1m1;
 
-    printf("%d!=%d \n",l+m,n_fac);
+    //printf("%d!=%d \n",l+m,n_fac);
     return v;
 }//endof_int_associated_legendre_ployns
 /**********************************************************************************/

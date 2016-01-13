@@ -11,6 +11,7 @@
 # include <math.h>
 # include <time.h>
 # include <string.h>
+#include <malloc.h>
 
 /*--------------------------------------------------------------------------------*/
 /**********************************************************************************/
@@ -100,7 +101,30 @@ buildMat_reflective_boundary_conditions(int N, FLOAT **C_2X, FLOAT **C_2Y,
 
 /*--------------------------------------------------------------------------------*/
 /**********************************************************************************/
-
+void
+build_coefD_xx_bd(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_weights_l, 
+        FLOAT *Gauss_points_r, FLOAT *Gauss_weights_r, 
+        FLOAT *coefD_Xm_bd, FLOAT *coefD_Xp_bd, FLOAT *coefD_Ym_bd, 
+        FLOAT *coefD_Yp_bd, FLOAT *coefD_Zm_bd, FLOAT *coefD_Zp_bd);
+/*
+ * This function is aimed to build the coefD_Xm_bd, ...
+ * which is coefficient matrixes of boundary faces used in the 
+ * block matrix, but coefD_Xm_bd is a vec arranged by rows of 
+ * the matrix. More details see "程序过程整理1" page:39.
+ *
+ * Input: PN, the PN approximating number, is odd.
+ *        lable, the lable of the boundary face.
+ *        Gauss_order, the number of Gausspoints.
+ *        Gauss_points_l, the Gausspoints on interval [-1,0].
+ *        Gauss_weights_l, the Gaussweights according Gauss_points_l.
+ *        Gauss_points_r, the Gausspoints on interval [0,1].
+ *        Gauss_weights_r, the Gaussweights according Gauss_points_r.
+ * 
+ * Output: coefD_Xm_bd, the X- boundary face coefficient vec. 
+ *         coefD_Xp_bd, the X+ boundary face coefficient vec. 
+ *         ...
+ *         ...
+ */
 
 /**********************************************************************************/
 /*--------------------------------------------------------------------------------*/

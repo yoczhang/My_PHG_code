@@ -266,7 +266,7 @@ buildMat_reflective_boundary_conditions(int N, FLOAT **C_2X, FLOAT **C_2Y, FLOAT
 /*--------------------------------------------------------------------------------*/
 /**********************************************************************************/
 void
-build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_weights_l, 
+build_coefD_xx_bd(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_weights_l, 
         FLOAT *Gauss_points_r, FLOAT *Gauss_weights_r, 
         FLOAT *coefD_Xm_bd, FLOAT *coefD_Xp_bd, FLOAT *coefD_Ym_bd, 
         FLOAT *coefD_Yp_bd, FLOAT *coefD_Zm_bd, FLOAT *coefD_Zp_bd)
@@ -300,7 +300,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
     FLOAT **coefXm, **coefXp, **coefYm, **coefYp, **coefZm, **coefZp;
     FLOAT **refl_coefX_cache, **refl_coefY_cache, **refl_coefZ_cache;
     FLOAT **matAxmatB;// 用来存储矩阵 A*B 的结果.
-    int fg_coefXm, fg_coefXp, fg_coefYm, fg_coef_Yp, fg_coef_Zm, fg_coef_Zp;
+    int fg_coefXm, fg_coefXp, fg_coefYm, fg_coefYp, fg_coefZm, fg_coefZp;
     /* fg_coefXm 用来标识 coefXm 有没有用到，可能并不是所有面都会用到. */
     
     nY=(PN+1)*(PN+1);
@@ -314,14 +314,15 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
 
     /* refl_coefX_cache ... 用来临时存储 reflective 边界面形成的
      * 矩阵，在接下来的程序中用来给 coefXm ...进行赋值。*/
-    refl_coefX_cache==(FLOAT **)malloc(sizeof(FLOAT *)*refl_bd_row);
-    refl_coefY_cache==(FLOAT **)malloc(sizeof(FLOAT *)*refl_bd_row);
-    refl_coefZ_cache==(FLOAT **)malloc(sizeof(FLOAT *)*refl_bd_row);
+    refl_coefX_cache=(FLOAT **)malloc(sizeof(FLOAT *)*refl_bd_row);
+    refl_coefY_cache=(FLOAT **)malloc(sizeof(FLOAT *)*refl_bd_row);
+    refl_coefZ_cache=(FLOAT **)malloc(sizeof(FLOAT *)*refl_bd_row);
     for(i=0;i<refl_bd_row;++i){
         *(refl_coefX_cache+i)=(FLOAT *)malloc(refl_bd_col*sizeof(FLOAT));
-        *(refl_coefY_cache+i)=(FLOAT *)malloc(refl_bd_col*sizeof(FLOAT));       
+        *(refl_coefY_cache+i)=(FLOAT *)malloc(refl_bd_col*sizeof(FLOAT)); 
         *(refl_coefZ_cache+i)=(FLOAT *)malloc(refl_bd_col*sizeof(FLOAT));
     }
+
     buildMat_reflective_boundary_conditions(PN, refl_coefX_cache, 
             refl_coefY_cache, refl_coefZ_cache);
 
@@ -343,6 +344,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
                         Gauss_weights_l, Gauss_points_r, Gauss_weights_r, coefXm);
             }//endof_if(1==fixed_bd_num[i])
         }//endof_for(i=0;i<len_fixed;++i)
+
 
         if(fg_coefXm!=0){
             /* 因为要重复使用 matAxmatB 这块内存，所以用 calloc 函数，
@@ -444,12 +446,13 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
 
              for(j=0;j<nY;++j){
                 free(matAxmatB[j]);
-                matAxmatB=NULL;
+                matAxmatB[j]=NULL;
              }
              free(matAxmatB);
              matAxmatB=NULL;
         }//endof_if(fg_coefXp!=0)
     }//endof_if(fg_coefXp==0)
+
 
     if(fg_coefXp==0){
         for(i=0;i<len_refl;++i){
@@ -470,18 +473,17 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
 
             arrangeMatrixInRows(nY,nY,matAxmatB,coefD_Xp_bd);
 
-             for(j=0;j<nY;++j){
+            for(j=0;j<nY;++j){
                 free(matAxmatB[j]);
-                matAxmatB=NULL;
-             }
-             free(matAxmatB);
-             matAxmatB=NULL;
+                matAxmatB[j]=NULL;
+            }
+            free(matAxmatB);
+            matAxmatB=NULL;
         }//endof_if(fg_coefXp!=0)
     }//endof_if(fg_coefXp==0)
 
     if(fg_coefXp==0)
         coefD_Xp_bd=NULL;
-
 
 
     /* 对 coefYm 申请内存，并建立 coefYm，并注意在这套程序中
@@ -521,7 +523,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
 
              for(j=0;j<nY;++j){
                 free(matAxmatB[j]);
-                matAxmatB=NULL;
+                matAxmatB[j]=NULL;
              }
              free(matAxmatB);
              matAxmatB=NULL;
@@ -549,7 +551,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
 
              for(j=0;j<nY;++j){
                 free(matAxmatB[j]);
-                matAxmatB=NULL;
+                matAxmatB[j]=NULL;
              }
              free(matAxmatB);
              matAxmatB=NULL;
@@ -597,7 +599,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
 
              for(j=0;j<nY;++j){
                 free(matAxmatB[j]);
-                matAxmatB=NULL;
+                matAxmatB[j]=NULL;
              }
              free(matAxmatB);
              matAxmatB=NULL;
@@ -625,7 +627,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
 
              for(j=0;j<nY;++j){
                 free(matAxmatB[j]);
-                matAxmatB=NULL;
+                matAxmatB[j]=NULL;
              }
              free(matAxmatB);
              matAxmatB=NULL;
@@ -674,7 +676,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
 
              for(j=0;j<nY;++j){
                 free(matAxmatB[j]);
-                matAxmatB=NULL;
+                matAxmatB[j]=NULL;
              }
              free(matAxmatB);
              matAxmatB=NULL;
@@ -705,7 +707,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
                 matAxmatB=NULL;
              }
              free(matAxmatB);
-             matAxmatB=NULL;
+             matAxmatB[j]=NULL;
         }//endof_if(fg_coefZm!=0)
     }//endof_if(fg_coefZm==0)
 
@@ -750,7 +752,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
 
              for(j=0;j<nY;++j){
                 free(matAxmatB[j]);
-                matAxmatB=NULL;
+                matAxmatB[j]=NULL;
              }
              free(matAxmatB);
              matAxmatB=NULL;
@@ -778,7 +780,7 @@ build_coefD_xx_bd_(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_
 
              for(j=0;j<nY;++j){
                 free(matAxmatB[j]);
-                matAxmatB=NULL;
+                matAxmatB[j]=NULL;
              }
              free(matAxmatB);
              matAxmatB=NULL;

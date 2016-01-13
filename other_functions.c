@@ -342,10 +342,9 @@ MatA_x_MatB(BOOLEAN tran, INT rowA, INT colA, FLOAT **A,
     INT i,j,k;
     FLOAT r;
 
-    if(tran==FLASE){
+    if(tran==FALSE){
         if(colA!=rowB){
-            printf("In function 'MatA_x_MatB()', tran==FLASE,
-                    but colA!=rowB, abort!");
+            printf("In function 'MatA_x_MatB()', tran==FLASE,but colA!=rowB, abort!\n");
             abort();
         }//endof_if(colA!=rowB)
 
@@ -361,8 +360,7 @@ MatA_x_MatB(BOOLEAN tran, INT rowA, INT colA, FLOAT **A,
 
     if(tran==TRUE){
         if(rowA!=rowB){
-            printf("In function 'MatA_x_MatB()', tran==TRUE,
-                    but rowA!=rowB, abort!");
+            printf("In function 'MatA_x_MatB()', tran==TRUE, but rowA!=rowB, abort!");
             abort();
         }//endof_if(colA!=rowB)
 
@@ -703,11 +701,11 @@ build_rhs(FLOAT **D_x, FLOAT **D_y, FLOAT **D_z, DOF *u_F, VEC *rhs, INT nY)
     int i, j, k;
 
     VEC *rhs_xf, *rhs_yf, *rhs_zf, *rhs_0f;
-    FLOAT vec_xf[N], vec_yf[N], vec_zf[N], vec_0f[N], vec_0f1[N];
+    FLOAT vec_xf[N], vec_yf[N], vec_zf[N], vec_0f[N];// vec_0f1[N];//myDebug
     INT I[N];
 
-    DOF *f_c=phgDofNew(g, DOF_CONSTANT, 1, "f_c", DofNoAction);//myDebug
-    phgDofSetDataByValuesV(f_c, (FLOAT)1.0);//myDebug
+    //DOF *f_c=phgDofNew(g, DOF_CONSTANT, 1, "f_c", DofNoAction);//myDebug
+    //phgDofSetDataByValuesV(f_c, (FLOAT)1.0);//myDebug
 
     for(i=0;i<nY;++i){
         coefRHS_x[i]=q_0*D_x[0][i];
@@ -732,18 +730,20 @@ build_rhs(FLOAT **D_x, FLOAT **D_y, FLOAT **D_z, DOF *u_F, VEC *rhs, INT nY)
         for(i=0;i<N;++i){
             I[i] = phgMapE2L(mapu_F, 0, e, i);
             vec_0f[i]=phgQuadBasParGradi(e, 0, u_F, i, 4);
-            phgQuadDofTimesBas(e,f_c,u_F,i,4,vec_0f1+i);
+            //phgQuadDofTimesBas(e,f_c,u_F,i,4,vec_0f1+i);//myDebug
             vec_xf[i]=phgQuadBasParGradi(e, 1, u_F, i, 4);
             vec_yf[i]=phgQuadBasParGradi(e, 2, u_F, i, 4);
             vec_zf[i]=phgQuadBasParGradi(e, 3, u_F, i, 4);
         }//endof-for(i=0;i<N;++i)
 
+	/* myDebug
         printf("test in build_rhs: test1\n");
 
         for(i=0;i<N;++i){
             printf("vec_0f[%d]=%f  ",i,*(vec_0f+i));
             printf("vec_0f1[%d]=%f \n",i,*(vec_0f1+i));
         }
+	*/
 
         phgVecAddEntries(rhs_0f, 0, N, I, vec_0f);
         phgVecAddEntries(rhs_xf, 0, N, I, vec_xf);
@@ -776,7 +776,179 @@ build_rhs(FLOAT **D_x, FLOAT **D_y, FLOAT **D_z, DOF *u_F, VEC *rhs, INT nY)
 
 /*--------------------------------------------------------------------------------*/
 /**********************************************************************************/
+/*
+ * To build the linear system. 
+ * this function is aimed to combine the build_rhs() and the assemble_Fxx_matrixes()
+ * functions, more this function will add one function which will build boundary face
+ * matrix. 
+ */
+void
+build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x, 
+        MAT *F_yx, MAT *F_yy, MAT *F_yz, MAT *F_y0, MAT *F_0y,
+        MAT *F_zx, MAT *F_zy, MAT *F_zz, MAT *F_z0, MAT *F_0z,
+        MAT *F_00,
+        FLOAT **D_x, FLOAT **D_y, FLOAT **D_z, VEC *rhs, INT nY)
+{
+    DOF *u_h = F_xx->rmap->dofs[0];
+    MAP *mapF = F_xx->rmap;
+    int N = u_h->type->nbas;	/* number of basis functions in an element */
+    GRID *g = u_h->g;
+    ELEMENT *e;
+    //int i, j;
+    FLOAT matF_xx[N][N], matF_xy[N][N], matF_xz[N][N], matF_x0[N][N], matF_0x[N][N];
+    FLOAT matF_yx[N][N], matF_yy[N][N], matF_yz[N][N], matF_y0[N][N], matF_0y[N][N];
+    FLOAT matF_zx[N][N], matF_zy[N][N], matF_zz[N][N], matF_z0[N][N], matF_0z[N][N];
+    FLOAT matF_00[N][N];
+    FLOAT matF_bd_00[N][N],
+    INT I[N];
 
 
+    extern FLOAT sigma_t;
+    extern FLOAT sigma_s;
+    extern FLOAT q_0;
+    //MAP *mapu_F=phgMapCreate(u_F,NULL); //下面即用上面的 mapF 代替
+    FLOAT coefRHS_x[nY], coefRHS_y[nY], coefRHS_z[nY], coefRHS_0[nY];
+    int num = DofGetDataCountGlobal(u_h);
+    int i, j, k;
+
+    VEC *rhs_xf, *rhs_yf, *rhs_zf, *rhs_0f;
+    FLOAT vec_xf[N], vec_yf[N], vec_zf[N], vec_0f[N];
+    INT I[N];
+
+    for(i=0;i<nY;++i){
+        coefRHS_x[i]=q_0*D_x[0][i];
+        coefRHS_y[i]=q_0*D_y[0][i];
+        coefRHS_z[i]=q_0*D_z[0][i];
+        coefRHS_0[i]=0;
+    }
+    coefRHS_0[0]=q_0*(sigma_t - sigma_s);
+
+    rhs_xf=phgMapCreateVec(mapF,1);
+    phgVecDisassemble(rhs_xf);
+    rhs_yf=phgMapCreateVec(mapF,1);
+    phgVecDisassemble(rhs_yf);
+    rhs_zf=phgMapCreateVec(mapF,1);
+    phgVecDisassemble(rhs_zf);
+    rhs_0f=phgMapCreateVec(mapF,1);
+    phgVecDisassemble(rhs_0f);
+
+    assert(u_h->dim == 1);
+
+    ForAllElements(g, e) {
+        for (i = 0; i < N; ++i) {
+            I[i] = phgMapE2L(mapF, 0, e, i);
+	        /* build matF_xx ... */
+            for(j = 0; j <= i; ++j){
+                matF_xx[i][j]=matF_xx[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 1, u_h, i, 4);
+                matF_xy[i][j]=matF_xy[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 2, u_h, i, 4);
+                matF_xz[i][j]=matF_xz[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 3, u_h, i, 4);
+                matF_x0[i][j]=matF_x0[j][i]=phgQuadBasParGradi_BasParGradj(e, 1, u_h, j, 0, u_h, i, 4);
+                matF_0x[i][j]=matF_0x[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 1, u_h, i, 4);
+
+                matF_yx[i][j]=matF_yx[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 1, u_h, i, 4);
+                matF_yy[i][j]=matF_yy[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 2, u_h, i, 4);
+                matF_yz[i][j]=matF_yz[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 3, u_h, i, 4);
+                matF_y0[i][j]=matF_y0[j][i]=phgQuadBasParGradi_BasParGradj(e, 2, u_h, j, 0, u_h, i, 4);
+                matF_0y[i][j]=matF_0y[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 2, u_h, i, 4);
+
+                matF_zx[i][j]=matF_zx[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 1, u_h, i, 4);
+                matF_zy[i][j]=matF_zy[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 2, u_h, i, 4);
+                matF_zz[i][j]=matF_zz[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 3, u_h, i, 4);
+                matF_z0[i][j]=matF_z0[j][i]=phgQuadBasParGradi_BasParGradj(e, 3, u_h, j, 0, u_h, i, 4);
+                matF_0z[i][j]=matF_0z[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 3, u_h, i, 4);
+
+                matF_00[i][j]=matF_00[j][i]=phgQuadBasParGradi_BasParGradj(e, 0, u_h, j, 0, u_h, i, 4);
+
+
+                /* build the boundary matrixes, there are 4 faces in one element */
+                for(k=1;k<=4;++k){
+                    if(e->bound_type[i]==BDRY_USER0){
+                        
+                    }
+                }
+
+            }//endof_for(j = 0; j <= i; ++j)
+
+	        /* build rhs vec_0f ... */
+            vec_0f[i]=phgQuadBasParGradi(e, 0, u_h, i, 4);
+            vec_xf[i]=phgQuadBasParGradi(e, 1, u_h, i, 4);
+            vec_yf[i]=phgQuadBasParGradi(e, 2, u_h, i, 4);
+            vec_zf[i]=phgQuadBasParGradi(e, 3, u_h, i, 4);
+
+
+        }//endof_for(i = 0; i < N; ++i)
+
+	/* add entries to MAT *F_xx, *F_xy ... */
+        for(i = 0;i < N;++i){
+            phgMatAddEntries(F_xx, 1, I+i, N, I, &matF_xx[i][0]);
+            phgMatAddEntries(F_xy, 1, I+i, N, I, &matF_xy[i][0]);
+            phgMatAddEntries(F_xz, 1, I+i, N, I, &matF_xz[i][0]);
+            phgMatAddEntries(F_x0, 1, I+i, N, I, &matF_x0[i][0]);
+            phgMatAddEntries(F_0x, 1, I+i, N, I, &matF_0x[i][0]);
+
+            phgMatAddEntries(F_yx, 1, I+i, N, I, &matF_yx[i][0]);
+            phgMatAddEntries(F_yy, 1, I+i, N, I, &matF_yy[i][0]);
+            phgMatAddEntries(F_yz, 1, I+i, N, I, &matF_yz[i][0]);
+            phgMatAddEntries(F_y0, 1, I+i, N, I, &matF_y0[i][0]);
+            phgMatAddEntries(F_0y, 1, I+i, N, I, &matF_0y[i][0]);
+
+            phgMatAddEntries(F_zx, 1, I+i, N, I, &matF_zx[i][0]);
+            phgMatAddEntries(F_zy, 1, I+i, N, I, &matF_zy[i][0]);
+            phgMatAddEntries(F_zz, 1, I+i, N, I, &matF_zz[i][0]);
+            phgMatAddEntries(F_z0, 1, I+i, N, I, &matF_z0[i][0]);
+            phgMatAddEntries(F_0z, 1, I+i, N, I, &matF_0z[i][0]);
+
+            phgMatAddEntries(F_00, 1, I+i, N, I, &matF_00[i][0]);
+        }//endof_for(i = 0;i < N;++i)/* add entries to MAT *F_xx, *F_xy ... */
+
+	/* add entries to rhs VEC *rhs_0f ... */
+        phgVecAddEntries(rhs_0f, 0, N, I, vec_0f);
+        phgVecAddEntries(rhs_xf, 0, N, I, vec_xf);
+        phgVecAddEntries(rhs_yf, 0, N, I, vec_yf);
+        phgVecAddEntries(rhs_zf, 0, N, I, vec_zf);
+
+	
+    }//endof_ForAllElements(g, e)
+
+    k=0;
+    for(i=0; i<nY; ++i){
+        for(j=0; j<num; ++j){
+            *(rhs->data + k) = *(rhs_xf->data + j) * coefRHS_x[i] + *(rhs_yf->data + j) * coefRHS_y[i] +
+                *(rhs_zf->data + j) * coefRHS_z[i] + *(rhs_0f->data + j) * coefRHS_0[i];
+            ++k;
+        }
+    }
+
+
+    phgMapDestroy(&mapu_h);
+
+    phgVecDestroy(&rhs_xf);
+    phgVecDestroy(&rhs_yf);
+    phgVecDestroy(&rhs_zf);
+    phgVecDestroy(&rhs_0f);
+}//endof_build_linear_system()
 /**********************************************************************************/
 /*--------------------------------------------------------------------------------*/
+
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
+
+
+/*--------------------------------------------------------------------------------*/
+/**********************************************************************************/
+/**********************************************************************************/
+/*--------------------------------------------------------------------------------*/
+
