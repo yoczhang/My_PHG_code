@@ -35,7 +35,7 @@ main(int argc, char *argv[])
     quad=phgQuadGetQuad1D(1);
     printf("1D npoints=%d \n",quad->npoints);
 
-    quad=phgQuadGetQuad3D(4);
+    quad=phgQuadGetQuad3D(1);
     printf("3D npoints=%d \n",quad->npoints);
 
     for(i=0;i<5*quad->npoints;i++){

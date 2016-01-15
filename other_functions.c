@@ -776,18 +776,22 @@ build_rhs(FLOAT **D_x, FLOAT **D_y, FLOAT **D_z, DOF *u_F, VEC *rhs, INT nY)
 
 /*--------------------------------------------------------------------------------*/
 /**********************************************************************************/
-/*
- * To build the linear system. 
- * this function is aimed to combine the build_rhs() and the assemble_Fxx_matrixes()
- * functions, more this function will add one function which will build boundary face
- * matrix. 
- */
 void
 build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x, 
         MAT *F_yx, MAT *F_yy, MAT *F_yz, MAT *F_y0, MAT *F_0y,
         MAT *F_zx, MAT *F_zy, MAT *F_zz, MAT *F_z0, MAT *F_0z,
-        MAT *F_00,
+        MAT *F_00, MAT *XmFbd_00, MAT *XpFbd_00, MAT *YmFbd_00,
+        MAT *YpFbd_00, MAT *ZmFbd_00, MAT *ZpFbd_00,
         FLOAT **D_x, FLOAT **D_y, FLOAT **D_z, VEC *rhs, INT nY)
+/*
+ * To build the linear system. 
+ * this function is aimed to combine the build_rhs() and the assemble_Fxx_matrixes()
+ * functions, more this function will add one function which will build boundary face
+ * matrix.
+ *
+ * Input: All of the parameters are the input.
+ *
+ */
 {
     DOF *u_h = F_xx->rmap->dofs[0];
     MAP *mapF = F_xx->rmap;
@@ -799,7 +803,8 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
     FLOAT matF_yx[N][N], matF_yy[N][N], matF_yz[N][N], matF_y0[N][N], matF_0y[N][N];
     FLOAT matF_zx[N][N], matF_zy[N][N], matF_zz[N][N], matF_z0[N][N], matF_0z[N][N];
     FLOAT matF_00[N][N];
-    FLOAT matF_bd_00[N][N],
+    /* following is to use FLOAT matXm[N][N] to store data standsfor MAT *XmFbd_00 ...*/
+    FLOAT matXm[N][N], matXp[N][N], matYm[N][N], matYp[N][N], matZm[N][N], matZp[N][N];
     INT I[N];
 
 
@@ -813,7 +818,7 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
 
     VEC *rhs_xf, *rhs_yf, *rhs_zf, *rhs_0f;
     FLOAT vec_xf[N], vec_yf[N], vec_zf[N], vec_0f[N];
-    INT I[N];
+
 
     for(i=0;i<nY;++i){
         coefRHS_x[i]=q_0*D_x[0][i];
@@ -861,10 +866,38 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
 
 
                 /* build the boundary matrixes, there are 4 faces in one element */
-                for(k=1;k<=4;++k){
-                    if(e->bound_type[i]==BDRY_USER0){
-                        
+                matXm[i][j]=matXm[j][i]=0.0;
+                matXp[i][j]=matXp[j][i]=0.0;
+                matYm[i][j]=matYm[j][i]=0.0;
+                matYp[i][j]=matYp[j][i]=0.0;
+                matZm[i][j]=matZm[j][i]=0.0;
+                matZp[i][j]=matZp[j][i]=0.0;
+                for(k=0;k<4;++k){
+                    if(e->bound_type[k]==BDRY_USER1){
+                        matXm[i][j]=matXm[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
+                        printf("BDRY_USER1\n");
                     }
+                    
+                    if(e->bound_type[k]==BDRY_USER2){
+                        matXp[i][j]=matXp[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
+                        printf("BDRY_USER2\n");
+                    }
+
+                    if(e->bound_type[k]==BDRY_USER3){
+                        matYm[i][j]=matYm[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
+                        printf("BDRY_USER3\n");
+                    }
+
+                    if(e->bound_type[k]==BDRY_USER4){
+                        matYp[i][j]=matYp[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
+                        printf("BDRY_USER4\n");
+                    }
+
+                    if(e->bound_type[k]==BDRY_USER5)
+                        matZm[i][j]=matZm[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
+
+                    if(e->bound_type[k]==BDRY_USER6)
+                        matZp[i][j]=matZp[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
                 }
 
             }//endof_for(j = 0; j <= i; ++j)
@@ -899,6 +932,13 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
             phgMatAddEntries(F_0z, 1, I+i, N, I, &matF_0z[i][0]);
 
             phgMatAddEntries(F_00, 1, I+i, N, I, &matF_00[i][0]);
+
+            phgMatAddEntries(XmFbd_00, 1, I+i, N, I, &matXm[i][0]);
+            phgMatAddEntries(XpFbd_00, 1, I+i, N, I, &matXp[i][0]);
+            phgMatAddEntries(YmFbd_00, 1, I+i, N, I, &matYm[i][0]);
+            phgMatAddEntries(YpFbd_00, 1, I+i, N, I, &matYp[i][0]);
+            phgMatAddEntries(ZmFbd_00, 1, I+i, N, I, &matZm[i][0]);
+            phgMatAddEntries(ZpFbd_00, 1, I+i, N, I, &matZp[i][0]);
         }//endof_for(i = 0;i < N;++i)/* add entries to MAT *F_xx, *F_xy ... */
 
 	/* add entries to rhs VEC *rhs_0f ... */
@@ -906,7 +946,6 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
         phgVecAddEntries(rhs_xf, 0, N, I, vec_xf);
         phgVecAddEntries(rhs_yf, 0, N, I, vec_yf);
         phgVecAddEntries(rhs_zf, 0, N, I, vec_zf);
-
 	
     }//endof_ForAllElements(g, e)
 
@@ -919,8 +958,9 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
         }
     }
 
+    phgDofFree(&u_h);
 
-    phgMapDestroy(&mapu_h);
+    phgMapDestroy(&mapF);
 
     phgVecDestroy(&rhs_xf);
     phgVecDestroy(&rhs_yf);
