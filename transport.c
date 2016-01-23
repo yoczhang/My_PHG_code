@@ -214,8 +214,6 @@ main(int argc, char *argv[])
 
     phgRefineAllElements(g, pre_refines);
 
-
-
     
     u_F = phgDofNew(g, Space_basis, 1, "u_F", DofInterpolation);
     u_F->DB_mask = BDRY_MASK;
