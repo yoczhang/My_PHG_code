@@ -37,13 +37,13 @@
 /* alpha_function.c 
  * this function is to compute the value of \alpha_{lm}*/
 FLOAT
-alpha_function(INT l, INT m, FLOAT c);
+alpha_function(INT l, INT m);
 
 
 /* lambda_function.c 
  * this function is to compute the value of \lambda_{lm}*/
 FLOAT
-lambda_function(INT l, INT m, FLOAT c);
+lambda_function(INT l, INT m);
 /**********************************************************************************/
 /*--------------------------------------------------------------------------------*/
 

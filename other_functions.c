@@ -1,7 +1,7 @@
 /* The functions in this file are written by myself, aiming to 
  * solve the transport-equations */
 
-/* $Id: other_functions.c, v 0.1 2015/09/04 10:11:00 zlb Exp $ */
+/* $Id: other_functions.c, $ */
 #include "phg.h"
 #include "phg/quad-gauss.h"
 #include "phg/quad-permu.h"
@@ -61,26 +61,26 @@ eta_function(INT l, INT m, INT c){
 
 /* alpha_function.c */
 FLOAT
-alpha_function(INT l, INT m, FLOAT c){
+alpha_function(INT l, INT m){
     FLOAT r;
     FLOAT numerator;//分子
     FLOAT denominator;//分母
     numerator=(FLOAT)(l+m+1)*(l+m+2);
     denominator=(FLOAT)4*(2*l+1)*(2*l+3);
-    r=c*(-1.0)*sqrt(numerator/denominator);
+    r=(-1.0)*sqrt(numerator/denominator);
     return r;
 }//endof-alpha_function
 
 
 /* lambda_function.c */
 FLOAT
-lambda_function(INT l, INT m, FLOAT c){
+lambda_function(INT l, INT m){
     FLOAT r;
     FLOAT numerator;//分子
     FLOAT denominator;//分母
     numerator=(FLOAT)(l+m+1)*(l-m+1);
     denominator=(FLOAT)(2*l+1)*(2*l+3);
-    r=c*sqrt(numerator/denominator);
+    r=sqrt(numerator/denominator);
     return r;
 }//endof-lambda_function
 /*--------------------------------------------------------------------------------*/
@@ -112,62 +112,81 @@ build_D_x_matrix(INT nY, INT PN, FLOAT **D_x)
     for(l=0;l<=PN;l++){
         for(m=-l;m<=l;m++){
             col=l*l+l+m;
-            if(m>=1){
+            if(m>=2){
                 if(l-1>=0){
                     row=(l-1)*(l-1)+(l-1)+(m-1);
-                    *(*(D_x+row)+col)=alpha_function(l-1,m-1,1.0);
+                    *(*(D_x+row)+col)=alpha_function(l-1,m-1);
                     if(m+1<=l-1){
                         row=(l-1)*(l-1)+(l-1)+(m+1);
-                        *(*(D_x+row)+col)=alpha_function(l-1,-m+1,-1.0);
+                        *(*(D_x+row)+col)=(-1.0)*alpha_function(l-1,-m-1);
                     }
                 }//endof-if(l-1>=0)
 
                 if(l+1<=PN){
                     row=(l+1)*(l+1)+(l+1)+(m-1);
-                    *(*(D_x+row)+col)=alpha_function(l,-m,-1.0);
+                    *(*(D_x+row)+col)=(-1.0)*alpha_function(l,-m);
+                    row=(l+1)*(l+1)+(l+1)+(m+1);
+                    *(*(D_x+row)+col)=alpha_function(l,m);
+                }
+            }//endof-if(m>=2)
+
+            if(m=1){
+                if(l-1>=0){
+                    row=(l-1)*(l-1)+(l-1)+(m-1);
+                    *(*(D_x+row)+col)=sqrt(2.0)*alpha_function(l-1,m-1);
+                    if(m+1<=l-1){
+                        row=(l-1)*(l-1)+(l-1)+(m+1);
+                        *(*(D_x+row)+col)=(-1.0)*alpha_function(l-1,-m-1);
+                    }
+                }//endof-if(l-1>=0)
+
+                if(l+1<=PN){
+                    row=(l+1)*(l+1)+(l+1)+(m-1);
+                    *(*(D_x+row)+col)=(-1.0)*sqrt(2.0)*alpha_function(l,-m);
                     row=(l+1)*(l+1)+(l+1)+(m+1);
                     *(*(D_x+row)+col)=alpha_function(l,m,1.0);
                 }
-            }//endof-if(m>=1)
-
+            }//endof-if(m=1)
+            
             if(m==0){
-                if(l-1<=0 && m+1<=l-1){
+                if(l-1>=0 && m+1<=l-1){
                     row=(l-1)*(l-1)+(l-1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l-1,-m-1,-sqrt(2.0));
+                    *(*(D_x+row)+col)=(-1.0)*sqrt(2.0)*alpha_function(l-1,-m-1);
                 }
                 if(l+1<=PN){
                     row=(l+1)*(l+1)+(l+1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l,m,sqrt(2.0));
+                    *(*(D_x+row)+col)=sqrt(2.0)*alpha_function(l,m);
                 }
             }//endof-if(m==0)
 
             if(m==-1){
                 if(l-1>=0 && m-1>=-(l-1)){
                     row=(l-1)*(l-1)+(l-1)+(m-1);
-                    *(*(D_x+row)+col)=alpha_function(l-1,m-1,-1.0);
+                    *(*(D_x+row)+col)=(-1.0)*alpha_function(l-1,m-1);
                 }
                 if(l+1<=PN){
                     row=(l+1)*(l+1)+(l+1)+(m-1);
-                    *(*(D_x+row)+col)=alpha_function(l,-m,1.0);
+                    *(*(D_x+row)+col)=alpha_function(l,-m);
                 }
             }//endof-if(m==-1)
 
             if(m<=-2){
                 if(l-1>=0){
-                    row=(l-1)*(l-1)+(l-1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l-1,-m-1,1.0);
                     if(m-1>=-(l-1)){
                         row=(l-1)*(l-1)+(l-1)+(m-1);
-                        *(*(D_x+row)+col)=alpha_function(l-1,m-1,1.0);
+                        *(*(D_x+row)+col)=(-1.0)*alpha_function(l-1,m-1);
                     }
+                    
+                    row=(l-1)*(l-1)+(l-1)+(m+1);
+                    *(*(D_x+row)+col)=alpha_function(l-1,-m-1);
                 }
 
                 if(l+1<=PN){
-                    row=(l+1)*(l+1)+(l+1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l,m,-1.0);
-                    
                     row=(l+1)*(l+1)+(l+1)+(m-1);
-                    *(*(D_x+row)+col)=alpha_function(l,-m,1.0);
+                    *(*(D_x+row)+col)=alpha_function(l,-m);
+
+                    row=(l+1)*(l+1)+(l+1)+(m+1);
+                    *(*(D_x+row)+col)=(-1.0)*alpha_function(l,m);
                 }
             }//endof-if(m<=-2)
             
@@ -198,54 +217,93 @@ build_D_y_matrix(INT nY, INT PN, FLOAT **D_y)
     for(l=0;l<=PN;l++){
         for(m=-l;m<=l;m++){
            col=l*l+l+m;
-           if(m>=1){
+           if(m>=2){
                if(l-1>=0){
-                   row=(l-1)*(l-1)+(l-1)-(m-1);
-                   *(*(D_y+row)+col)=alpha_function(l-1,m-1,-1.0);
                    if(m+1<=l-1){
-                       row=(l-1)*(l-1)+(l-1)-(m+1);
-                       *(*(D_y+row)+col)=alpha_function(l-1,-m-1,1.0);
+                       row=(l-1)*(l-1)+(l-1)-(m+1);// This point -(m+1) is important, refer the derivation.
+                       *(*(D_y+row)+col)=(-1.0)*alpha_function(l-1,-m-1);
                    }
-               }
+
+                   row=(l-1)*(l-1)+(l-1)-(m-1);// -(m-1) is also important, refer the derivation.
+                   *(*(D_y+row)+col)=(-1.0)*alpha_function(l-1,m-1);
+               }//endof-if(l-1>=0)
+               
                if(l+1<=PN){
-                   row=(l+1)*(l+1)+(l+1)-(m-1);
-                   *(*(D_y+row)+col)=alpha_function(l,-m,-1.0);
-                   row=(l+1)*(l+1)+(l+1)-(m+1);
-                   *(*(D_y+row)+col)=alpha_function(l,m,1.0);
+                   row=(l+1)*(l+1)+(l+1)-(m+1);// -(m+1) is also important
+                   *(*(D_y+row)+col)=alpha_function(l,m);
+
+                   row=(l+1)*(l+1)+(l+1)-(m-1);// -(m-1) is also important
+                   *(*(D_y+row)+col)=alpha_function(l,-m);
                }
-           }//endof-if(m>=1)
+           }//endof-if(m>=2)
 
            if(m==1){
                if(l-1>=0 && m+1<=l-1){
-                   row=(l-1)*(l-1)+(l-1)-(m-1);
-                   *(*(D_y+row)+col)=alpha_function(l-1,-m-1,-1.0);
+                   row=(l-1)*(l-1)+(l-1)-(m+1);
+                   *(*(D_y+row)+col)=(-1.0)*alpha_function(l-1,-m-1);
                }
+               
                 if(l+1<=PN){
                     row=(l+1)*(l+1)+(l+1)-(m+1);
-                    *(*(D_y+row)+col)=alpha_function(l,m,1.0);
+                    *(*(D_y+row)+col)=alpha_function(l,m);
                 }
            }//endof-if(m==1)
 
-           //m==0时，系数都为0，所以不用处理
+           if(m==0){
+               if (l-1>=0 && m+1<=l-1) {
+                   row=(l-1)*(l-1)+(l-1)-(m+1);
+                   *(*(D_y+row)+col)=(-sqrt(2.0))*alpha_function(l-1,-m-1);
+               }
 
-           if(m<=-1){
+               if (l+1<=PN) {
+                   row=(l+1)*(l+1)+(l+1)-(m+1);
+                   *(*(D_y+row)+col)=sqrt(2.0)*alpha_function(l,m);
+               }
+           }//endof-if(m==0)
+
+           if(m==-1){
                if(l-1>=0){
                    row=(l-1)*(l-1)+(l-1)-(m+1);
-                   *(*(D_y+row)+col)=alpha_function(l-1,-m-1,1.0);
+                   *(*(D_y+row)+col)=sqrt(2.0)*alpha_function(l-1,-m-1);
+                   
                    if(-(m-1)<=l-1){
                        row=(l-1)*(l-1)+(l-1)-(m-1);
-                       *(*(D_y+row)+col)=alpha_function(l-1,m-1,1.0);
+                       *(*(D_y+row)+col)=alpha_function(l-1,m-1);
                    }
                }
+               
                if(l+1<=PN){
                    row=(l+1)*(l+1)+(l+1)-(m+1);
-                   *(*(D_y+row)+col)=alpha_function(l,m,-1.0);
+                   *(*(D_y+row)+col)=(-1.0)*(sqrt(2.0))*alpha_function(l,m);
+                   
                    row=(l+1)*(l+1)+(l+1)-(m-1);
-                   *(*(D_y+row)+col)=alpha_function(l,-m,-1.0);
+                   *(*(D_y+row)+col)=(-1.0)*alpha_function(l,-m);
                }
-           }//endof-if(m<=-1)
+           }//endof-if(m==-1)
+
+           if(m<=-2){
+               if(l-1>=0){
+                   row=(l-1)*(l-1)+(l-1)-(m+1);// -(m+1) is important
+                   *(*(D_y+row)+col)=alpha_function(l-1,-m-1);
+                   
+                   if(-(m-1)<=l-1){
+                       row=(l-1)*(l-1)+(l-1)-(m-1);
+                       *(*(D_y+row)+col)=alpha_function(l-1,m-1);
+                   }
+               }
+               
+               if(l+1<=PN){
+                   row=(l+1)*(l+1)+(l+1)-(m+1);
+                   *(*(D_y+row)+col)=(-1.0)*alpha_function(l,m);
+                   
+                   row=(l+1)*(l+1)+(l+1)-(m-1);
+                   *(*(D_y+row)+col)=(-1.0)*alpha_function(l,-m);
+               }
+           }//endof-if(m<=-2)
+           
         }//endof-for(m=-l;...)
     }//endof-for(l=0;...)
+    
 }//endof-build_D_matrix
 
 
@@ -257,25 +315,24 @@ build_D_z_matrix(INT nY, INT PN, FLOAT **D_z){
     INT i,j;
     for(i=0;i<nY;i++){
         for(j=0;j<nY;j++)
-	    //printf("i=%d, j=%d \n",i,j);
             *(*(D_z+i)+j)=0.0;
     }
-    //printf("testing build_D_z_matrix\n");
     //*/
     INT l,m;
-    INT col,row;//ptr;
+    INT col,row;
     for(l=0;l<=PN;l++){
         for(m=-l;m<=l;m++){
             col=l*l+l+m;
             if(l-1>=0 && m!=-l && m!=l){
                 row=(l-1)*(l-1)+(l-1)+m;
-                *(*(D_z+row)+col)=lambda_function(l-1,m,1.0);
+                *(*(D_z+row)+col)=lambda_function(l-1,m);
             }
+            
             if(l+1<=PN){
                 row=(l+1)*(l+1)+(l+1)+m;
-                *(*(D_z+row)+col)=lambda_function(l,m,1.0);
-                //printf("right2: l=%d,m=%d, row=%d, col=%d, D_Z[%d][%d]=%f \n",l,m,row,col,row,col,*(*(D_z+row)+col));
+                *(*(D_z+row)+col)=lambda_function(l,m);
             }
+            
         }//endof-for(m=-l)
     }//endof-for(l=0)
 }//endof-build_D_z_matrix
