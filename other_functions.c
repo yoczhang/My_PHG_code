@@ -130,7 +130,7 @@ build_D_x_matrix(INT nY, INT PN, FLOAT **D_x)
                 }
             }//endof-if(m>=2)
 
-            if(m=1){
+            if(m==1){
                 if(l-1>=0){
                     row=(l-1)*(l-1)+(l-1)+(m-1);
                     *(*(D_x+row)+col)=sqrt(2.0)*alpha_function(l-1,m-1);
@@ -144,7 +144,7 @@ build_D_x_matrix(INT nY, INT PN, FLOAT **D_x)
                     row=(l+1)*(l+1)+(l+1)+(m-1);
                     *(*(D_x+row)+col)=(-1.0)*sqrt(2.0)*alpha_function(l,-m);
                     row=(l+1)*(l+1)+(l+1)+(m+1);
-                    *(*(D_x+row)+col)=alpha_function(l,m,1.0);
+                    *(*(D_x+row)+col)=alpha_function(l,m);
                 }
             }//endof-if(m=1)
             
