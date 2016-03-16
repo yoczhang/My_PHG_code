@@ -42,7 +42,7 @@ get_Gauss_points_weights(INT left, INT right, INT Gauss_order, FLOAT *Gauss_poin
 
     /*
      * 下面这3个具体的赋值，其实是要根据 legendre_rule.c 中
-     * 的 main() 函数来的，具体信息可以查看 legender_rule.c
+     * 的 main() 函数来的，具体信息可以查看 legendre_rule.c
      */
     kind=1;
     alpha=0.0;
@@ -64,6 +64,10 @@ get_Gauss_points_weights(INT left, INT right, INT Gauss_order, FLOAT *Gauss_poin
 FLOAT
 int_associated_legendre_polyns(int l, int m, int l1, int m1, int mm, FLOAT *x, 
         FLOAT *wts)
+/* mm 其实为所计算的点的个数，其他函数调用 int_associated_legendre_polyns() 
+ * 这个函数时的 mm 取值时为高斯积分点个数
+ */
+
 {
     int i;
     //int n_fac=factorial(l+m);
@@ -78,7 +82,12 @@ int_associated_legendre_polyns(int l, int m, int l1, int m1, int mm, FLOAT *x,
 
     /*
      * 因为自己需要求 P_l^{|m|}(x) 的值,
-     * 细节部分“”程序过程整理 1”Page:40
+     * 细节部分"程序过程整理 1"Page:40
+     * 并且这里 pm_polynomial_value(mm, l, m, x) 函数返回的值
+     * 是 P_0^m(x<mm>), P_2^m(x{mm}), P_3^m(x{mm})...P_l^m(x{mm}).
+     * 要注意到每个 P_l^m(x{mm}) 含义都是包含 mm 个值，即
+     * P_l^m(x[0]), P_l^m(x[1])... P_l^m(x[mm-1]).
+     * 所以为了求得 P_l^m 的 mm 个(高斯积分点数) 的值，在后面要 +l*mm.
      */    
     m=abs(m);
     m1=abs(m1);
@@ -98,8 +107,8 @@ int_associated_legendre_polyns(int l, int m, int l1, int m1, int mm, FLOAT *x,
 
     /*
      * 因为 pm_polynomial_value() 所计算的 P_l^m 里面包含了
-     * 乘以(-1)^m,而自己在离散时所定的 P_l^m 里面是没有乘以
-     * (-1)^m 的，所以，下面在(|m|+|m1|)%2!=0时会有一个转换。
+     * 乘以(-1)^m(这一点已经确认),而自己在离散时所定义的 P_l^m 里面
+     * 是没有乘以(-1)^m 的，所以，下面在(|m|+|m1|)%2!=0时会有一个转换。
      */
     if((m+m1)%2!=0)
         v=-v;
@@ -233,7 +242,7 @@ pm_polynomial_value(int mm, int n, int m, FLOAT *x)//fllowing has my Debug.
   int k;
   double *v;
 
-  v = ( double * ) malloc ( mm*(n+1) * sizeof ( double ) );;
+  v = ( double * ) malloc ( mm*(n+1) * sizeof ( double ) );
 
   // myDebug
   // the 'j' standsfor the Associated Legender ploynomial "P_n^m" subindex 'n'
@@ -801,7 +810,7 @@ void imtqlx ( int n, double d[], double e[], double z[] )
   int j;
   int k;
   int l;
-  int m;
+  int m=0;
   int mml;
   double p;
   double prec;
@@ -1820,7 +1829,7 @@ void timestamp ( void )
 
   static char time_buffer[TIME_SIZE];
   const struct tm *tm;
-  size_t len;
+  size_t len=0;
   time_t now;
 
   now = time ( NULL );

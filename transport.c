@@ -122,7 +122,7 @@ main(int argc, char *argv[])
     FLOAT L2error, indicator;
     size_t mem_peak;
 
-    MAP *rmap, *cmap, *rhsmap;
+    MAP *rmap, *cmap;
 
     /*
      * 下面是声明块矩阵中的组成元素，pmatF_xx.. 的含义
@@ -143,12 +143,10 @@ main(int argc, char *argv[])
     MAT *YmFbd_00, *pmatYmFbd_00[nY*nY], *YpFbd_00, *pmatYpFbd_00[nY*nY];
     MAT *ZmFbd_00, *pmatZmFbd_00[nY*nY], *ZpFbd_00, *pmatZpFbd_00[nY*nY];
     
-    VEC *Q=NULL, *rhs=NULL;
+    VEC *rhs=NULL;
 
     MAT *BlockMat_DxF[16]; //Because in the last there will be 16 blockmatrixes to add up together.
     MAT *matDF; // matDF=BlockMat_DxF[0]+BlockMat_DxF[1]+...+BlockMat_DxF[15];
-    MAT *BlockMat_DxF_rhs[4];
-    MAT *matDF_rhs;
 
     /*
      * 注意下面的BlockMat_DxFbd 的大小是 6，这是因为目前所用的网格是一个立方体，
@@ -166,7 +164,7 @@ main(int argc, char *argv[])
     FLOAT coefD_zx[nY*nY], coefD_zy[nY*nY], coefD_zz[nY*nY], coefD_z0[nY*nY], coefD_0z[nY*nY];
     FLOAT coefD_00[nY*nY];
 
-    FLOAT coefD_x0_rhs[nY*nY], coefD_y0_rhs[nY*nY], coefD_z0_rhs[nY*nY], coefD_00_rhs[nY*nY];
+    //FLOAT coefD_x0_rhs[nY*nY], coefD_y0_rhs[nY*nY], coefD_z0_rhs[nY*nY], coefD_00_rhs[nY*nY];
 
     FLOAT coefD_Xm_bd[nY*nY], coefD_Xp_bd[nY*nY];
     FLOAT coefD_Ym_bd[nY*nY], coefD_Yp_bd[nY*nY];
@@ -192,6 +190,9 @@ main(int argc, char *argv[])
     FLOAT **temp;
 
 
+    /* 下面的 phgOptionsRegisterFloat 操作是，在执行程序时可以选择的选项，
+     * 比如 ./transport -pre_refines 1 就是事先将网格一致加密一次.
+     */
     phgOptionsRegisterFloat("a", "Coefficient", &a);
     phgOptionsRegisterFloat("tol", "Tolerance", &tol);
     phgOptionsRegisterInt("-pre_refines", "Pre-refines", &pre_refines);
@@ -240,10 +241,7 @@ main(int argc, char *argv[])
             *(*(D_z+im)+jm)=0.0;
         }
     }
- 
-    build_D_x_matrix(nY, PN, D_x);
-    build_D_y_matrix(nY, PN, D_y);
-    build_D_z_matrix(nY, PN, D_z);
+
 
     D_xx=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
     D_xy=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
@@ -316,7 +314,13 @@ main(int argc, char *argv[])
     }
     *(*(Delta0+0)+0)=1.0;
 
+    //建立 D_x，D_y，D_z 矩阵
+    build_D_x_matrix(nY, PN, D_x);
+    build_D_y_matrix(nY, PN, D_y);
+    build_D_z_matrix(nY, PN, D_z);
 
+    
+    //利用上面产生的 D_x，D_y，D_z 矩阵，建立 D_xx ... 矩阵
     MatA_multiply_MatB(tranT, nY, D_x, D_x, D_xx);
     MatA_multiply_MatB(tranT, nY, D_x, D_y, D_xy);
     MatA_multiply_MatB(tranT, nY, D_x, D_z, D_xz);
@@ -342,7 +346,7 @@ main(int argc, char *argv[])
     MatA_multiply_MatB(tranF, nY, Delta0, D_z, Dd_0z);
 
     //myDebug
-    printf("test10\n"); 
+    //printf("test10\n"); 
     
     arrangeMatrixInRows(nY,nY,D_xx,coefD_xx);
     /*
@@ -407,16 +411,6 @@ main(int argc, char *argv[])
         }
     }
     arrangeMatrixInRows(nY,nY,temp,coefD_00);
-
-    arrangeMatrixInRows(nY,nY,D_x0,coefD_x0_rhs);
-    arrangeMatrixInRows(nY,nY,D_y0,coefD_y0_rhs);
-    arrangeMatrixInRows(nY,nY,D_z0,coefD_z0_rhs);
-    for(im=0;im<nY;++im){
-        for(jm=0;jm<nY;++jm){
-            *(*(temp+im)+jm)=*(*(Ie+im)+jm)*sigma_t - *(*(Delta0+im)+jm)*sigma_s;
-        }
-    }
-    arrangeMatrixInRows(nY,nY,temp,coefD_00_rhs);
 
     Gauss_points_l=(FLOAT *)malloc(Gauss_order * sizeof(FLOAT));
     Gauss_weights_l=(FLOAT *)malloc(Gauss_order * sizeof(FLOAT));
@@ -525,41 +519,34 @@ main(int argc, char *argv[])
             coefD_Yp_bd,coefD_Zm_bd,coefD_Zp_bd);
 
 
-    /*
-    printf("fllowing is return 0\n");
-    return 0;
-    */
-
-
     while (TRUE) 
     {
-	    elapsed_time(g, FALSE, 0.);
+	elapsed_time(g, FALSE, 0.);
         phgPrintf("\n------ %"dFMT" DOF, %"dFMT" elements, mesh LIF = %lg\n",
 	        nY * DofGetDataCountGlobal(u_F), g->nleaf_global, (double)g->lif);
         
-	    if (phgBalanceGrid(g, lif_threshold, submesh_threshold, NULL, 0.)) {
-	        phgPrintf("------ Repartition mesh: nprocs = %d, LIF = %lg ",
-			        g->nprocs, (double)g->lif);
-	        elapsed_time(g, TRUE, 0.);
-	    }//endof_if()
+	if (phgBalanceGrid(g, lif_threshold, submesh_threshold, NULL, 0.)) {
+	    phgPrintf("------ Repartition mesh: nprocs = %d, LIF = %lg ",
+			    g->nprocs, (double)g->lif);
+	    elapsed_time(g, TRUE, 0.);
+	}//endof_if()
         
-	    phgPrintf("Set up linear solver: ");
-	    solver = phgSolverCreate(SOLVER_GMRES, u_solver, NULL);
-	    solver->mat->handle_bdry_eqns = FALSE;
+	phgPrintf("Set up linear solver: ");
+	solver = phgSolverCreate(SOLVER_GMRES, u_solver, NULL);
+	solver->mat->handle_bdry_eqns = FALSE;
         
         if(!solver->mat->handle_bdry_eqns)
             printf("solver->mat->handle_bdry_eqns==FALSE \n");
         /* to check whether the solver->mat->handle_bdry_eqns is FLASE
         */
         
-	    phgPrintf("solver LIF = %lg \n", (double)solver->rhs->map->lif);
-
-
+	phgPrintf("solver LIF = %lg \n", (double)solver->rhs->map->lif);
+        
         /*------- creating the Mat *F_xx, *F_xy ... VEC *Q ------*/
         /*-------------------------------------------------------*/
         rmap = phgMapCreate(u_F,NULL);
         cmap = phgMapCreate(u_F,NULL);
-        rhsmap = phgMapCreate(u_solver,NULL);
+        //rhsmap = phgMapCreate(u_solver,NULL);
 
         F_xx = phgMapCreateMat(rmap, cmap);
         F_xx->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
@@ -610,7 +597,7 @@ main(int argc, char *argv[])
         ZpFbd_00 = phgMapCreateMat(rmap, cmap);
         ZpFbd_00->handle_bdry_eqns = solver->mat->handle_bdry_eqns;
 
-        Q = phgMapCreateVec(rhsmap, 1);
+        //Q = phgMapCreateVec(rhsmap, 1);
         /*-------------------------------------------------------*/
         /*------- creating the Mat *F_xx, *F_xy ... VEC *Q ------*/
         //myDebug
@@ -669,10 +656,12 @@ main(int argc, char *argv[])
 
         BlockMat_DxF[15]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_00, coefD_00, NULL);
 
+        /*
         BlockMat_DxF_rhs[0]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_x0, coefD_x0_rhs, NULL);
         BlockMat_DxF_rhs[1]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_y0, coefD_y0_rhs, NULL);
         BlockMat_DxF_rhs[2]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_z0, coefD_z0_rhs, NULL);
         BlockMat_DxF_rhs[3]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatF_00, coefD_00_rhs, NULL);
+        */
 
         if(coefD_Xm_bd!=NULL)
             BlockMat_DxF_bd[0]=phgMatCreateBlockMatrix(g->comm, nY, nY, pmatXmFbd_00, coefD_Xm_bd, NULL);
@@ -720,10 +709,12 @@ main(int argc, char *argv[])
 
         /*------- Add the block matrixes to MAT *matDF_rhs -----*/
         /*------------------------------------------------------*/
+        /*
         matDF_rhs=phgMatAXPBY(1.0,BlockMat_DxF_rhs[0],0.0,&matDF_rhs);
         for(im=1;im<4;++im){
             matDF_rhs=phgMatAXPBY(1.0,BlockMat_DxF_rhs[im],1.0,&matDF_rhs);
         }
+        */
         /*------------------------------------------------------*/
         /*------- Add the block matrixes to MAT *matDF_rhs -----*/
 
@@ -749,9 +740,15 @@ main(int argc, char *argv[])
         }
 
         printf("jm=%d\n",jm);
+
+        /* 注意下面的这种取值方法仍然是有问题的，下面这种方法是认为
+         * 0~5（或者2~5，或者3~5）之间是没有NULL这种情况的，其实有可能
+         * 0~2之间没有NULL的情况，但3是NULL，4~5又没有NULL，所以，
+         * 以后还要修改一下程序，以适应更广泛的情况.
+         */
         matDF_bd=phgMatAXPBY(1.0,BlockMat_DxF_bd[jm],0.0,&matDF_bd);
         for(im=jm+1;im<6;++im){
-            matDF_bd=phgMatAXPBY(1.0,BlockMat_DxF_bd[im],1.0,&matDF_rhs);
+            matDF_bd=phgMatAXPBY(1.0,BlockMat_DxF_bd[im],1.0,&matDF_bd);
         }
         /*------------------------------------------------------*/
         /*------- Add the block matrixes to MAT *matDF_bd  -----*/
@@ -801,15 +798,7 @@ main(int argc, char *argv[])
         solver->mat=matDF;
         solver->rhs->mat=solver->mat;
 
-        phgPrintf("Assemble the matrixes: F_xx, F_xy ... \n");
-        /*
-        assemble_Fxx_matrixes(F_xx, F_xy, F_xz, F_x0, F_0x, 
-                F_yx, F_yy, F_yz, F_y0, F_0y, 
-                F_zx, F_zy, F_zz, F_z0, F_0z, 
-                F_00);
-        */
-
-
+        
 
         /*------------------ Build the RHS ---------------------*/
         /*------------------------------------------------------*/
@@ -821,23 +810,18 @@ main(int argc, char *argv[])
 
         /*--------------- test the length of VEC *Q -------------*/
         /*-------------------------------------------------------*/
+        /*
         int lengthQ;
         lengthQ=Q->map->nlocal*Q->nvec;
-        //lengthQ=Q->map->nlocal;
-        printf("length of Q = %d \n",lengthQ);
+        printf("length of Q(Q->map->nlocal*Q->nvec) = %d \n",lengthQ);
 
         if(lengthQ != nY * DofGetDataCountGlobal(u_F)){
             printf("the length of Q is not matching the total number of DOFs(nY * DofGetDataCountGlobal(u_F)), quit!");
         }
 
         assert(lengthQ == nY * DofGetDataCountGlobal(u_F));
+        */
 
-        printf("build the RHS \n");
-        //build_rhs(D_x, D_y, D_z, u_F, rhs, nY);
-
-        for(im=0;im<lengthQ;++im){
-            *(Q->data+im)=1.0;
-        }//assignment to VEC *Q.
         /*-------------------------------------------------------*/
         /*--------------- test the length of VEC *Q -------------*/
 
@@ -867,16 +851,16 @@ main(int argc, char *argv[])
             printf("rhs=%f   \n",*(Q->data+im));
         }
         */
+
+        printf("\nBuild linear system: ");
         build_linear_system(F_xx, F_xy, F_xz, F_x0, F_0x, F_yx, F_yy, F_yz, 
                 F_y0, F_0y, F_zx, F_zy, F_zz, F_z0, F_0z, F_00, XmFbd_00, 
                 XpFbd_00, YmFbd_00, YpFbd_00, ZmFbd_00, ZpFbd_00, D_x, D_y, 
                 D_z, rhs, nY);
 
-
-
         elapsed_time(g,TRUE,0.);
 
-        phgPrintf("Solve linear system: ");
+        phgPrintf("\nSolve linear system: ");
         phgSolverSolve(solver,TRUE,u_solver,NULL);
         phgPrintf("nits=%d, resid=%0.4lg ",solver->nits,
                 (double)solver->residual);
@@ -907,8 +891,6 @@ main(int argc, char *argv[])
         phgMatDestroy(&F_0z);
 
         phgMatDestroy(&F_00);
-
-        phgVecDestroy(&Q);
     }//endof_while(TRUE)
 
 
@@ -924,7 +906,7 @@ main(int argc, char *argv[])
     free(coefD_yx); free(coefD_yy); free(coefD_yz); free(coefD_y0); free(coefD_0y);
     free(coefD_zx); free(coefD_zy); free(coefD_zz); free(coefD_z0); free(coefD_0z);
     free(coefD_00); 
-    free(coefD_x0_rhs); free(coefD_y0_rhs); free(coefD_z0_rhs); free(coefD_00_rhs);
+    //free(coefD_x0_rhs); free(coefD_y0_rhs); free(coefD_z0_rhs); free(coefD_00_rhs);
 
     free(coefD_Xm_bd); free(coefD_Xp_bd); 
     free(coefD_Ym_bd); free(coefD_Yp_bd);

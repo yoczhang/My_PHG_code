@@ -401,7 +401,7 @@ MatA_x_MatB(BOOLEAN tran, INT rowA, INT colA, FLOAT **A,
 
     if(tran==FALSE){
         if(colA!=rowB){
-            printf("In function 'MatA_x_MatB()', tran==FLASE,but colA!=rowB, abort!\n");
+            printf("In function 'MatA_x_MatB()', tran==FLASE, but colA!=rowB, abort!\n");
             abort();
         }//endof_if(colA!=rowB)
 
@@ -519,7 +519,7 @@ arrangeMatrixInRows(int row, int col, double **A, double *C)
  * 下面的函数是在单元e上计算第m，n个基函数的偏导数乘积的积分，
  * 其中ParGradi(ParGradj)取0时表示不求导，1表示对x求偏导数，
  * 2表示对y的偏导数，3表示对z的偏导数。
- *
+n *
  * 此函数是在 quad.c 中 phgQuadGradBasAGradBas 函数的基础上改的，
  * 并且只用到了A=NULL 的情况，所以A！=NULL 的都删掉了。
  */
@@ -640,8 +640,10 @@ phgQuadBasParGradi(ELEMENT *e, int ParGradi, DOF *u, int n, int order)
     else{
         g1=gPGrad1;
         Pin1=ParGradi-1;
-        //这里就是根据gPGrad1的数据结构来的，具体的数据结构可以参看笔记
-        Pout1=Dim;
+        /*这里就是根据gPGrad1的数据结构来的，具体的数据结构可以参看
+          笔记 "程序过程整理 1" Page:28
+         */
+        Pout1=Dim;// Dim 在 phg.h 中定义为 3.
     }
     
 	for (i = 0; i < quad->npoints; i++) {
@@ -855,7 +857,6 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
     int N = u_h->type->nbas;	/* number of basis functions in an element */
     GRID *g = u_h->g;
     ELEMENT *e;
-    //int i, j;
     FLOAT matF_xx[N][N], matF_xy[N][N], matF_xz[N][N], matF_x0[N][N], matF_0x[N][N];
     FLOAT matF_yx[N][N], matF_yy[N][N], matF_yz[N][N], matF_y0[N][N], matF_0y[N][N];
     FLOAT matF_zx[N][N], matF_zy[N][N], matF_zz[N][N], matF_z0[N][N], matF_0z[N][N];
@@ -876,7 +877,7 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
     VEC *rhs_xf, *rhs_yf, *rhs_zf, *rhs_0f;
     FLOAT vec_xf[N], vec_yf[N], vec_zf[N], vec_0f[N];
 
-
+    /*
     for(i=0;i<nY;++i){
         coefRHS_x[i]=q_0*D_x[0][i];
         coefRHS_y[i]=q_0*D_y[0][i];
@@ -884,6 +885,7 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
         coefRHS_0[i]=0;
     }
     coefRHS_0[0]=q_0*(sigma_t - sigma_s);
+    */
 
     rhs_xf=phgMapCreateVec(mapF,1);
     phgVecDisassemble(rhs_xf);
@@ -929,25 +931,28 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
                 matYp[i][j]=matYp[j][i]=0.0;
                 matZm[i][j]=matZm[j][i]=0.0;
                 matZp[i][j]=matZp[j][i]=0.0;
+
+                
+               
                 for(k=0;k<4;++k){
                     if(e->bound_type[k]==BDRY_USER1){
                         matXm[i][j]=matXm[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
-                        printf("BDRY_USER1\n");
+                        //printf("BDRY_USER1\n");
                     }
                     
                     if(e->bound_type[k]==BDRY_USER2){
                         matXp[i][j]=matXp[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
-                        printf("BDRY_USER2\n");
+                        //printf("BDRY_USER2\n");
                     }
 
                     if(e->bound_type[k]==BDRY_USER3){
                         matYm[i][j]=matYm[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
-                        printf("BDRY_USER3\n");
+                        //printf("BDRY_USER3\n");
                     }
 
                     if(e->bound_type[k]==BDRY_USER4){
                         matYp[i][j]=matYp[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
-                        printf("BDRY_USER4\n");
+                        //printf("BDRY_USER4\n");
                     }
 
                     if(e->bound_type[k]==BDRY_USER5)
@@ -955,7 +960,8 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
 
                     if(e->bound_type[k]==BDRY_USER6)
                         matZp[i][j]=matZp[j][i]=phgQuadFaceBasDotBas(e,k,u_h,j,u_h,i,4);
-                }
+                }//endof_for(k=0;k<4;++k)
+                
 
             }//endof_for(j = 0; j <= i; ++j)
 
@@ -1006,6 +1012,28 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
 	
     }//endof_ForAllElements(g, e)
 
+    
+    /*---------------------------------------------------------------------*/
+    /*
+     * 下面这个部分其实是为了组装右端rhs项，这一块不是很通用的，这个是根据最简单
+     * 的源项q为常数q_0，然后离散后的phg分块矩阵中的系数项
+     * 当然上面的部分ForAllElements(g, e)中也会相应的有代码，
+     * 是想说，以后复杂的情况下，这一段（还有上面部分）代码是要修改的。
+     */
+
+    /*
+     * 下面的这个循环是由离散的格式来的，具体参考离散格式的Tex版本
+     * “As for the rhs” 这一节的内容.
+     * 由离散格式的特殊性采用的比较直接的赋值方法.
+     */
+    for(i=0;i<nY;++i){
+        coefRHS_x[i]=q_0*D_x[0][i];
+        coefRHS_y[i]=q_0*D_y[0][i];
+        coefRHS_z[i]=q_0*D_z[0][i];
+        coefRHS_0[i]=0;
+    }
+    coefRHS_0[0]=q_0*(sigma_t - sigma_s);
+
     k=0;
     for(i=0; i<nY; ++i){
         for(j=0; j<num; ++j){
@@ -1014,7 +1042,9 @@ build_linear_system(MAT *F_xx, MAT *F_xy, MAT *F_xz, MAT *F_x0, MAT *F_0x,
             ++k;
         }
     }
-
+    /*--------------------------------------------------------------------*/
+    
+    
     phgDofFree(&u_h);
 
     phgMapDestroy(&mapF);
