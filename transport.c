@@ -246,7 +246,7 @@ main(int argc, char *argv[])
     D_xx=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
     D_xy=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
     D_xz=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
-    D_xz=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
+    //D_xz=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
     D_x0=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
     Dd_x0=(FLOAT **)malloc(sizeof(FLOAT *)*nY);
     D_0x=(FLOAT **)malloc(sizeof(FLOAT *)*nY);

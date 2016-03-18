@@ -704,10 +704,10 @@ build_coefD_xx_bd(int PN, int Gauss_order, FLOAT *Gauss_points_l, FLOAT *Gauss_w
 
              for(j=0;j<nY;++j){
                 free(matAxmatB[j]);
-                matAxmatB=NULL;
+                matAxmatB[j]=NULL;
              }
              free(matAxmatB);
-             matAxmatB[j]=NULL;
+             matAxmatB=NULL;
         }//endof_if(fg_coefZm!=0)
     }//endof_if(fg_coefZm==0)
 
