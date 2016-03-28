@@ -48,7 +48,7 @@ typedef SIMPLEX ELEMENT;
      */
 
 FLOAT sigma_t = 1.0;
-FLOAT sigma_s = 0.5;
+FLOAT sigma_s = 0.3;
 FLOAT q_0 = 1.0;
 /* the lambda is coefficient of boundary matrixes */
 FLOAT lambda=2.0;
@@ -407,7 +407,7 @@ main(int argc, char *argv[])
     for(im=0;im<nY;++im){
         for(jm=0;jm<nY;++jm){
             *(*(temp+im)+jm)=*(*(Ie+im)+jm)*sigma_t*sigma_t - 
-                *(*(Delta0+im)+jm)*2*(sigma_t*sigma_s-sigma_s*sigma_s);
+                *(*(Delta0+im)+jm)*(2*sigma_t*sigma_s-sigma_s*sigma_s);
         }
     }
     arrangeMatrixInRows(nY,nY,temp,coefD_00);
